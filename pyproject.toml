@@ -1,0 +1,36 @@
+
+[tool.poetry]
+name = "continualUtils"
+version = "0.0.1"
+description = "Additional functionalities that just work with Avalanche"
+license = "MIT"
+authors = ["Nishant S. Aswani <nishantaswani@nyu.edu>"]
+readme = "README.md"
+packages = [{include = "continualUtils"}]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+poetry = {version = "^1.6.1", allow-prereleases = true}
+
+[tool.poetry.dev-dependencies]
+
+[tool.poetry-dynamic-versioning]
+enable = true
+vcs = "git"
+style = "pep440"
+
+[tool.poetry-dynamic-versioning.substitution]
+folders = [
+  { path = "continualUtils", files = ["_version.py"] }
+]
+
+[build-system]
+requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning>=1.0.0,<2.0.0"]
+build-backend = "poetry_dynamic_versioning.backend"
+
+[tool.black]
+line-length = 80
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"

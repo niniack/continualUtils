@@ -1,14 +1,13 @@
 import os
-import torch
-from pathlib import Path
-from functools import reduce
 from collections import OrderedDict
-
-import torch.nn.functional as F
-from torch import nn
+from functools import reduce
+from pathlib import Path
 
 import base
+import torch
+import torch.nn.functional as F
 from avalanche.models import MultiHeadClassifier, MultiTaskModule
+from torch import nn
 
 
 class CustomCNN(base.BaseModel):
@@ -73,7 +72,9 @@ class CustomCNN(base.BaseModel):
             ), "Failed to provide task labels for multihead classifier"
 
             # Reshape pooler output
-            pooler_out = out["pooler_output"].view(out["pooler_output"].size(0), -1)
+            pooler_out = out["pooler_output"].view(
+                out["pooler_output"].size(0), -1
+            )
 
             # Feed to multihead classifier
             classifier_out = self.multihead_classifier(pooler_out, task_labels)
@@ -115,7 +116,9 @@ class Net(nn.Module):
             ),
         )
         self.pooler = nn.MaxPool2d(2)
-        self.classifier = nn.Sequential(nn.Linear(in_features, self.num_classes))
+        self.classifier = nn.Sequential(
+            nn.Linear(in_features, self.num_classes)
+        )
 
     def forward(self, x):
         stage_one = self.features[0](x)

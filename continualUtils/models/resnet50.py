@@ -1,32 +1,28 @@
 import os
-import torch
-from pathlib import Path
 from functools import reduce
-from torch import nn
-from transformers import ResNetConfig, ResNetModel, ResNetForImageClassification
+from pathlib import Path
 
 import base
+import torch
 from avalanche.models import MultiHeadClassifier, MultiTaskModule
+from torch import nn
+from transformers import ResNetConfig, ResNetForImageClassification, ResNetModel
 
 
-class CustomResNet18(base.BaseModel):
-    """Build a Resnet 18 model as
-    described in https://arxiv.org/pdf/2007.07400.pdf
-    """
-
+class CustomResNet50(base.BaseModel):
     def __init__(
         self, num_classes, device, seed=42, output_hidden=False, multihead=False
     ):
         """
         Returns:
-            Resnet18 model
+            Resnet50 model
         """
         super().__init__(
             seed=seed,
             output_hidden=output_hidden,
             is_multihead=multihead,
             device=device,
-            in_features=256,
+            in_features=2048,
             out_features=num_classes,
         )
 
@@ -34,12 +30,12 @@ class CustomResNet18(base.BaseModel):
         # the resnet-50 style configuration
         configuration = ResNetConfig(
             num_channels=3,
-            embedding_size=32,
-            hidden_sizes=[32, 64, 128, 256],
-            depths=[2, 2, 2, 2],
-            layer_type="basic",
+            embedding_size=64,
+            hidden_sizes=[256, 512, 1024, 2048],
+            depths=[3, 4, 6, 3],
+            layer_type="bottleneck",
             hidden_act="relu",
-            downsample_in_first_stage=True,
+            downsample_in_first_stage=False,
             num_labels=num_classes,
         )
 
@@ -77,7 +73,9 @@ class CustomResNet18(base.BaseModel):
             self.model.save_pretrained(dir_name)
             print(f"Model saved in directory: {dir_name}")
         else:
-            print("The provided model does not have a 'save_pretrained' method.")
+            print(
+                "The provided model does not have a 'save_pretrained' method."
+            )
 
     def _load_weights_impl(self, dir_name):
         print(f"Loading from {dir_name}")
@@ -96,10 +94,14 @@ class CustomResNet18(base.BaseModel):
             ), "Failed to provide task labels for multihead classifier"
 
             # Reshape pooler output
-            flat_pooler_out = out.pooler_output.view(out.pooler_output.size(0), -1)
+            flat_pooler_out = out.pooler_output.view(
+                out.pooler_output.size(0), -1
+            )
 
             # Feed to multihead classifier
-            classifier_out = self.multihead_classifier(flat_pooler_out, task_labels)
+            classifier_out = self.multihead_classifier(
+                flat_pooler_out, task_labels
+            )
         else:
             out = self.model(
                 x, output_hidden_states=self.output_hidden, return_dict=True

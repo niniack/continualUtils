@@ -1,13 +1,12 @@
 from pathlib import Path
-from typing import Sequence, Optional, Union, Any
+from typing import Any, Optional, Sequence, Union
 
-from torchvision import transforms
-
-from avalanche.benchmarks import nc_benchmark, NCScenario
+from avalanche.benchmarks import NCScenario, nc_benchmark
 from avalanche.benchmarks.classic.classic_benchmarks_utils import (
     check_vision_benchmark,
 )
 from datasets.clickme import ClickMeDataset, initialize_dataset
+from torchvision import transforms
 
 
 def SplitClickMe(

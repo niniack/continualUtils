@@ -3,24 +3,22 @@ Dataset access code adapted from the Harmonization project:
 https://github.com/serre-lab/Harmonization/blob/main/harmonization/common/clickme_dataset.py
 """
 
-from pathlib import Path
 import pickle
+from pathlib import Path
+from typing import Callable, List, Optional
 
 import numpy as np
 import torch
-from typing import Optional, Callable, List
-
+from avalanche.benchmarks.utils import make_classification_dataset
 from torch.utils.data import Dataset
 from torchvision.transforms.functional import gaussian_blur, resize
 
-from avalanche.benchmarks.utils import make_classification_dataset
-
-
-IMAGENET_MEAN = np.array([0.485, 0.456, 0.406])
-IMAGENET_STD = np.array([0.229, 0.224, 0.225])
+from .preprocess import preprocess_input
 
 # Dataset hosting info
-CLICKME_BASE_URL = "https://connectomics.clps.brown.edu/tf_records/clicktionary_files/"
+CLICKME_BASE_URL = (
+    "https://connectomics.clps.brown.edu/tf_records/clicktionary_files/"
+)
 TRAIN_ZIP = "clickme_train.zip"
 TEST_ZIP = "clickme_test.zip"
 VAL_ZIP = "clickme_val.zip"
@@ -44,30 +42,6 @@ def initialize_dataset(root: str, split: str):
     base_ds = ClickMeDataset(root=root, split=split)
 
     return make_classification_dataset(base_ds)
-
-
-"""
-Preprocess function from:
-https://github.com/serre-lab/Harmonization/blob/main/harmonization/models/preprocess.py
-"""
-
-
-def preprocess_input(images):
-    """Preprocesses images for the harmonized models.
-    The images are expected to be in RGB format with values in the range [0, 255].
-
-    Args:
-        images (Tensor or numpy array): image to be processed
-
-    Returns:
-        Tensor or numpy array: Preprocessed images
-    """
-    images = images / 255.0
-
-    images = images - IMAGENET_MEAN
-    images = images / IMAGENET_STD
-
-    return images
 
 
 class ClickMeDataset(Dataset):

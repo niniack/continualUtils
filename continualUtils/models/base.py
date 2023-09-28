@@ -1,6 +1,6 @@
+import os
 from abc import ABC, abstractmethod
 from pathlib import Path
-import os
 
 import torch
 from avalanche.models import MultiHeadClassifier, MultiTaskModule
@@ -8,7 +8,13 @@ from avalanche.models import MultiHeadClassifier, MultiTaskModule
 
 class BaseModel(ABC, MultiTaskModule):
     def __init__(
-        self, seed, output_hidden, is_multihead, in_features, out_features, device
+        self,
+        seed,
+        output_hidden,
+        is_multihead,
+        in_features,
+        out_features,
+        device,
     ):
         super().__init__()
         self.seed = seed
