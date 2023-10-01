@@ -1,7 +1,7 @@
 
 [tool.poetry]
 name = "continualUtils"
-version = "0.0.1"
+version = "0.0.2.post1.dev0+b562f7d"
 description = "Additional functionalities that just work with Avalanche"
 license = "MIT"
 authors = ["Nishant S. Aswani <nishantaswani@nyu.edu>"]
@@ -19,6 +19,7 @@ devtest = "tests.run_tests:main"
 [tool.poetry.group.dev.dependencies]
 virtualenv = "^20.24.5"
 pytest = "^7.4"
+dynamic-versioning = {extras = ["plugin"], version = "^1.0.1"}
 
 [tool.poetry-dynamic-versioning]
 enable = true
