@@ -32,6 +32,3 @@ WORKDIR /continualUtils
 # Install poetry with pinned version
 RUN pip install git+https://github.com/python-poetry/poetry.git@master
 ENV PATH="$PATH:$POETRY_HOME/bin"
-
-# Run the Python script to update pyproject.toml
-RUN python update_pyproject.py
