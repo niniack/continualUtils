@@ -2,14 +2,106 @@ import os
 from functools import reduce
 from pathlib import Path
 
-import base
 import torch
 from avalanche.models import MultiHeadClassifier, MultiTaskModule
 from torch import nn
 from transformers import ResNetConfig, ResNetForImageClassification, ResNetModel
 
+from continualUtils.models import BaseModel
 
-class CustomResNet18(base.BaseModel):
+
+class PretrainedResNet18(BaseModel):
+    def __init__(
+        self, device, seed=42, output_hidden=False, multihead=False
+    ):
+        """
+        Returns:
+            Pretrained ResNet18 from Microsoft
+        """
+        super().__init__(
+            seed=seed,
+            output_hidden=output_hidden,
+            is_multihead=multihead,
+            device=device,
+            in_features=512,
+            out_features=1000,
+        )
+
+        self._model = ResNetForImageClassification.from_pretrained("microsoft/resnet-18").to(device)
+        self._hidden_layers = []
+        self._num_hidden = len(self.hidden_layers)
+
+    @property
+    def model(self):
+        return self._model
+
+    @property
+    def hidden_layers(self):
+        return self._hidden_layers
+
+    @property
+    def num_hidden(self):
+        return self._num_hidden
+
+    def _save_weights_impl(self, dir_name):
+        # Check if the model has a 'save_pretrained' method
+        if hasattr(self.model, "save_pretrained"):
+            # Create the directory if it doesn't exist
+            if not os.path.exists(dir_name):
+                os.makedirs(dir_name)
+
+            # Save the model
+            self.model.save_pretrained(dir_name)
+            print(f"Model saved in directory: {dir_name}")
+        else:
+            print(
+                "The provided model does not have a 'save_pretrained' method."
+            )
+
+    def _load_weights_impl(self, dir_name):
+        print(f"Loading from {dir_name}")
+        # Load model
+        self._model = self.model.from_pretrained(dir_name)
+        self._model = self.model.to(self.device)
+    
+    def get_hidden_layer(self, id):
+        raise NotImplementedError("ToDo!")
+
+    def forward(self, x, labels=None):
+        if self.is_multihead:
+            out = self.model.resnet(
+                x, output_hidden_states=self.output_hidden, return_dict=True
+            )
+            # For multihead situation, must provide task labels!
+            assert (
+                task_labels != None
+            ), "Failed to provide task labels for multihead classifier"
+
+            # Reshape pooler output
+            flat_pooler_out = out.pooler_output.view(
+                out.pooler_output.size(0), -1
+            )
+
+            # Feed to multihead classifier
+            classifier_out = self.multihead_classifier(
+                flat_pooler_out, task_labels
+            )
+        else:
+            out = self.model(
+                x, output_hidden_states=self.output_hidden, return_dict=True
+            )
+            classifier_out = out.logits
+
+        if self.output_hidden:
+            return classifier_out, out.hidden_states
+        else:
+            return classifier_out
+
+
+
+
+
+class CustomResNet18(BaseModel):
     """Build a Resnet 18 model as
     described in https://arxiv.org/pdf/2007.07400.pdf
     """
