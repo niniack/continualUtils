@@ -24,8 +24,11 @@
 				"ms-python.vscode-pylance",
 				"njpwerner.autodocstring",
 				"ms-python.black-formatter",
-				"tamasfe.even-better-toml"
+				"tamasfe.even-better-toml",
+				"ms-python.isort"
 			]
 		}
-	}
+	},
+	"remoteUser": "developer", 
+	"postCreateCommand": "poetry install --no-root"
 }
