@@ -11,7 +11,13 @@ packages = [{include = "continualUtils"}]
 [tool.poetry.dependencies]
 python = ">=3.8,<3.11"
 avalanche-lib = "^0.4.0"
-torch = { version = "*", allow-prereleases = true }
+
+[tool.poetry.group.docker]
+optional = true
+
+[tool.poetry.group.docker.dependencies]
+torch = { version = "1.14.0a0+410ce96", allow-prereleases = true }
+torchvision = { version = "0.15.0a0", allow-prereleases = true }
 
 [tool.poetry.scripts]
 devtest = "tests.run_tests:main"
