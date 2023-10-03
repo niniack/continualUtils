@@ -4,7 +4,7 @@ from pathlib import Path
 
 import torch
 from avalanche.models import MultiHeadClassifier, MultiTaskModule
-
+import torch.backends.cudnn
 
 class BaseModel(ABC, MultiTaskModule):
     def __init__(

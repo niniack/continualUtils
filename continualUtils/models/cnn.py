@@ -3,14 +3,14 @@ from collections import OrderedDict
 from functools import reduce
 from pathlib import Path
 
-import base
+from continualUtils.models import BaseModel
 import torch
 import torch.nn.functional as F
 from avalanche.models import MultiHeadClassifier, MultiTaskModule
 from torch import nn
 
 
-class CustomCNN(base.BaseModel):
+class CustomCNN(BaseModel):
     """Build a simple CNN"""
 
     def __init__(
