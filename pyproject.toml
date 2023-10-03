@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "continualUtils"
-version = "0.0.2.post1.dev0+b562f7d"
+version = "0.0.2.post17.dev0+7932ca4"
 description = "Additional functionalities that just work with Avalanche"
 license = "MIT"
 authors = ["Nishant S. Aswani <nishantaswani@nyu.edu>"]
@@ -18,15 +18,13 @@ optional = true
 [tool.poetry.group.docker.dependencies]
 torch = { version = "1.14.0a0+410ce96", allow-prereleases = true}
 torchvision = { version = "0.15.0a0", allow-prereleases = true}
-virtualenv = "^20.24.5"
-pytest = "^7.4"
-dynamic-versioning = {extras = ["plugin"], version = "^1.0.1"}
 
 [tool.poetry.group.test]
 optional = true
 
 [tool.poetry.group.test.dependencies]
 datasets = "^2.14.5"
+pytest = "^7.4"
 
 [tool.poetry.scripts]
 devtest = "tests.run_tests:main"
