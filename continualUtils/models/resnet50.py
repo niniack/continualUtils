@@ -2,11 +2,12 @@ import os
 from functools import reduce
 from pathlib import Path
 
-from continualUtils.models import BaseModel
 import torch
 from avalanche.models import MultiHeadClassifier, MultiTaskModule
 from torch import nn
 from transformers import ResNetConfig, ResNetForImageClassification, ResNetModel
+
+from continualUtils.models import BaseModel
 
 
 class CustomResNet50(BaseModel):
