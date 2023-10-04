@@ -21,7 +21,7 @@ RUN apt-get update \
     && apt-get install -y software-properties-common \
     && add-apt-repository -y ppa:ubuntu-toolchain-r/test \
     && apt-get update \
-    && apt-get install -y libstdc++6 \
+    && apt-get install -y libstdc++6 libgl1 \
     && wget "https://github.com/aristocratos/btop/releases/latest/download/btop-x86_64-linux-musl.tbz" \
     && tar xvjf btop-x86_64-linux-musl.tbz -C /usr/local/bin \
     && rm btop-x86_64-linux-musl.tbz \

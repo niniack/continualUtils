@@ -25,6 +25,7 @@ optional = true
 [tool.poetry.group.test.dependencies]
 datasets = "^2.14.5"
 pytest = "^7.4"
+grad-cam = "^1.4.8"
 
 [tool.poetry.scripts]
 devtest = "tests.run_tests:main"
