@@ -1,41 +1,44 @@
+import matplotlib.pyplot as plt
 import pytest
 import torch
+from pytorch_grad_cam import GradCAM
+from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
 
 from continualUtils.explain import compute_saliency_map
 from continualUtils.models import PretrainedResNet18
 
 
-@pytest.fixture
-def sample_data():
-    model = PretrainedResNet18(num_classes=2, device=torch.device("cpu"))
-    inputs = torch.randn((2, 3, 32, 32))  # Example inputs
-    targets = torch.tensor([0, 1])  # Example targets
+def test_compute_saliency_map(pretrained_resnet18, img_tensor_list):
+    model = pretrained_resnet18
+    inputs = img_tensor_list[0].requires_grad_(True)
+    outputs = model.forward(img_tensor_list[0])
+    targets = torch.Tensor([281]).long()
 
-    return model, inputs, targets
+    # Compute the saliency map
+    saliency_map = compute_saliency_map(outputs, inputs, targets)
+    saliency_map_np = (
+        saliency_map.detach().cpu().squeeze(0).permute(1, 2, 0).numpy()
+    )
 
+    # Normalize the saliency map
+    saliency_map_np = (saliency_map_np - saliency_map_np.min()) / (
+        saliency_map_np.max() - saliency_map_np.min()
+    )
 
-def test_compute_saliency_map(sample_data):
-    model, inputs, targets = sample_data
+    # Compare with baseline
+    cam_engine = GradCAM(
+        model=model,
+        target_layers=[model.model.resnet.encoder.stages[-1]],
+        use_cuda=True,
+    )
+    cam = cam_engine(input_tensor=inputs, targets=[ClassifierOutputTarget(281)])
 
-    print(dir(model))
+    # Display the saliency map
+    plt.imshow(cam.transpose(1, 2, 0), cmap="hot")
+    plt.axis("off")
+    plt.colorbar()
+    plt.savefig("test2", bbox_inches="tight")
+    plt.show()
 
-
-    assert(False)
-
-    # # Forward pass to get the outputs
-    # outputs = model(inputs)
-
-    # # Compute the saliency map
-    # saliency_map = compute_saliency_map(outputs, inputs, targets)
-
-    # # Perform some assertions
-    # assert saliency_map is not None, "Saliency map should not be None"
-    # assert saliency_map.shape == (
-    #     2,
-    #     1,
-    #     32,
-    #     32,
-    # ), "Unexpected shape of saliency map"
-    # assert torch.all(
-    #     saliency_map >= 0
-    # ), "Saliency map should have only non-negative values"
+    # Assert the shape
+    assert inputs.shape[-2:] == saliency_map_np.shape[:2]

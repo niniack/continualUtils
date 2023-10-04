@@ -30,5 +30,5 @@
 		}
 	},
 	"remoteUser": "developer", 
-	"postCreateCommand": "poetry install --no-root"
+	"postCreateCommand": "poetry config virtualenvs.options.system-site-packages true && poetry install --no-root --only=docker"
 }

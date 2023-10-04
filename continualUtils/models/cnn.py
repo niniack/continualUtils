@@ -3,11 +3,12 @@ from collections import OrderedDict
 from functools import reduce
 from pathlib import Path
 
-from continualUtils.models import BaseModel
 import torch
 import torch.nn.functional as F
 from avalanche.models import MultiHeadClassifier, MultiTaskModule
 from torch import nn
+
+from continualUtils.models import BaseModel
 
 
 class CustomCNN(BaseModel):
