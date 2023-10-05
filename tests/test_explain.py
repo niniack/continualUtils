@@ -33,12 +33,12 @@ def test_compute_saliency_map(pretrained_resnet18, img_tensor_list):
     )
     cam = cam_engine(input_tensor=inputs, targets=[ClassifierOutputTarget(281)])
 
-    # Display the saliency map
-    plt.imshow(cam.transpose(1, 2, 0), cmap="hot")
-    plt.axis("off")
-    plt.colorbar()
-    plt.savefig("test2", bbox_inches="tight")
-    plt.show()
+    # # Display the saliency map
+    # plt.imshow(cam.transpose(1, 2, 0), cmap="hot")
+    # plt.axis("off")
+    # plt.colorbar()
+    # plt.savefig("test2", bbox_inches="tight")
+    # plt.show()
 
     # Assert the shape
     assert inputs.shape[-2:] == saliency_map_np.shape[:2]
