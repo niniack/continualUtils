@@ -1,0 +1,21 @@
+name: 'Publish to PyPI' 
+on: # rebuild any PRs and main branch changes
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+
+jobs:
+  if_merged:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Checkout (GitHub)
+        uses: actions/checkout@v3
+
+      - name: Build and run dev container task
+        uses: devcontainers/ci@v0.3
+        with:
+          runCmd: python bump.py "${{ github.event.pull_request.title }}"
