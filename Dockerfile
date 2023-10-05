@@ -41,7 +41,7 @@ ENV POETRY_NO_INTERACTION=1 \
     POETRY_VIRTUALENVS_OPTIONS_SYSTEM_SITE_PACKAGES=1
 
 # Install poetry with pinned version
-RUN pip install git+https://github.com/python-poetry/poetry.git@master
+RUN curl -sSL https://install.python-poetry.org | python3 - --git https://github.com/python-poetry/poetry.git@master
 ENV PATH="$PATH:$POETRY_HOME/bin"
 
 USER $USERNAME

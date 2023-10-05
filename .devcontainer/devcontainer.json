@@ -25,10 +25,11 @@
 				"njpwerner.autodocstring",
 				"ms-python.black-formatter",
 				"tamasfe.even-better-toml",
-				"ms-python.isort"
+				"ms-python.isort",
+				"ms-python.pylint"
 			]
 		}
 	},
-	"remoteUser": "developer", 
-	"postCreateCommand": "poetry config virtualenvs.options.system-site-packages true && poetry install --no-root --only=docker"
+	"remoteUser": "root", 
+	"postCreateCommand": "./.devcontainer/postCreate.sh"
 }

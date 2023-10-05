@@ -18,6 +18,7 @@ optional = true
 [tool.poetry.group.docker.dependencies]
 torch = { version = "1.14.0a0+410ce96", allow-prereleases = true}
 torchvision = { version = "0.15.0a0", allow-prereleases = true}
+pylint = "^3.0.0"
 
 [tool.poetry.group.test]
 optional = true
@@ -55,3 +56,9 @@ profile = "black"
 filterwarnings = [
     "ignore::DeprecationWarning"
 ]
+
+[tool.pylint.main]
+# List of members which are set dynamically and missed by pylint inference
+# system, and so shouldn't trigger E1101 when accessed. Python regular
+# expressions are accepted.
+generated-members = "torch.*, avalanche.*"
