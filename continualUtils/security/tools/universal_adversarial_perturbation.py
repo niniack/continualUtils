@@ -42,7 +42,7 @@ class UniversalAdversarialPerturbation:
         model.eval()
 
         # Extract all images and labels from the dataset
-        inputs, targets = zip(*dataset)
+        inputs, targets, *_ = zip(*dataset)
         inputs = torch.stack(inputs).to(device)
         targets = torch.tensor(targets).to(device)
 
