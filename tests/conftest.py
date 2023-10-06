@@ -1,9 +1,11 @@
 import pytest
 import torch
 import torchvision.transforms as transforms
+from avalanche.benchmarks.classic import PermutedMNIST
+from avalanche.models import SimpleMLP
 from datasets import load_dataset
 from PIL import Image
-from torch.utils.data import Dataset, TensorDataset
+from torch.utils.data import TensorDataset
 
 from continualUtils.models import PretrainedResNet18
 
@@ -64,3 +66,17 @@ def img_tensor_dataset():
     tensor1 = transform(image1).unsqueeze(0)
 
     return TensorDataset(tensor1, torch.Tensor([281]).long())
+
+
+@pytest.fixture
+def av_split_permuted_mnist():
+    perm_mnist = PermutedMNIST(n_experiences=2)
+    train_stream = perm_mnist.train_stream
+    test_stream = perm_mnist.test_stream
+    return train_stream, test_stream
+
+
+@pytest.fixture
+def av_simple_mlp():
+    model = SimpleMLP(num_classes=10)
+    return model
