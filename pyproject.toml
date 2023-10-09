@@ -16,8 +16,9 @@ transformers = "^4.33.3"
 optional = true
 
 [tool.poetry.group.docker.dependencies]
-torch = { version = "1.14.0a0+410ce96", allow-prereleases = true}
-torchvision = { version = "0.15.0a0", allow-prereleases = true}
+torch = {version = "2.0.0", source = "torch"}
+torchvision = {version = "0.15.1", source = "torch"}
+torchaudio = {version = "2.0.1", source = "torch"}
 pylint = "^3.0.0"
 
 [tool.poetry.group.test]
@@ -62,3 +63,8 @@ filterwarnings = [
 # system, and so shouldn't trigger E1101 when accessed. Python regular
 # expressions are accepted.
 generated-members = "torch.*, avalanche.*"
+
+[[tool.poetry.source]]
+name = "torch"
+url = "https://download.pytorch.org/whl/cu118"
+priority = "explicit"

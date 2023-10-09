@@ -1,5 +1,5 @@
 # Start from the NVIDIA PyTorch image
-FROM nvcr.io/nvidia/pytorch:22.12-py3
+FROM nvidia/cuda:11.8.0-runtime-ubuntu22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 ARG USERNAME=developer
@@ -21,7 +21,7 @@ RUN apt-get update \
     && apt-get install -y software-properties-common \
     && add-apt-repository -y ppa:ubuntu-toolchain-r/test \
     && apt-get update \
-    && apt-get install -y libstdc++6 libgl1 \
+    && apt-get install -y libstdc++6 libgl1 wget curl git bzip2 python3 python3-pip\
     && wget "https://github.com/aristocratos/btop/releases/latest/download/btop-x86_64-linux-musl.tbz" \
     && tar xvjf btop-x86_64-linux-musl.tbz -C /usr/local/bin \
     && rm btop-x86_64-linux-musl.tbz \
@@ -29,6 +29,9 @@ RUN apt-get update \
     && apt-get autoremove -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# Symlink python 
+RUN rm -f /usr/bin/python && ln -s /usr/bin/python3 /usr/bin/python
 
 # Set Poetry variables
 # The system site packages are important because we are using docker to give 
