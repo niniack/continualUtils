@@ -1,1 +1,1 @@
-from clickme import *
+from continualUtils.benchmarks.clickme import *
