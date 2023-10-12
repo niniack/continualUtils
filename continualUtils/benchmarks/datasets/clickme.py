@@ -5,15 +5,14 @@ https://github.com/serre-lab/Harmonization/blob/main/harmonization/common/clickm
 
 import pickle
 from pathlib import Path
-from typing import Callable, List, Optional
+from typing import Callable, Optional
 
 import numpy as np
 import torch
-from avalanche.benchmarks.utils import make_classification_dataset
 from torch.utils.data import Dataset
 from torchvision.transforms.functional import gaussian_blur, resize
 
-from .preprocess import preprocess_input
+from continualUtils.benchmarks.datasets.preprocess import preprocess_input
 
 # Dataset hosting info
 CLICKME_BASE_URL = (
@@ -27,21 +26,6 @@ LOCAL_PATH = "~/datasets/clickme/"
 
 HEATMAP_INDEX = 2
 TOKEN_INDEX = 3
-
-
-def initialize_dataset(root: str, split: str):
-    """Initializes an Avalanche Dataset
-
-    Args:
-        root (str): path for directory
-        split (str): train, test, or val split
-
-    Returns:
-        AvalancheDataset: an Avalanche Classification Dataset instance
-    """
-    base_ds = ClickMeDataset(root=root, split=split)
-
-    return make_classification_dataset(base_ds)
 
 
 class ClickMeDataset(Dataset):
