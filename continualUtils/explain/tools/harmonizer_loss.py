@@ -4,10 +4,10 @@ import torch
 import torch.nn.functional as F
 from avalanche.training.regularization import RegularizationMethod
 
-from continualUtils.training.losses.utils import (
-    _pyramidal_mse,
-    _saliency_map,
-    _standardize_cut,
+from continualUtils.explain.tools import (
+    compute_pyramidal_mse,
+    compute_saliency_map,
+    standardize_cut,
 )
 
 # from .loss_utils import _alt_saliency_map
@@ -22,7 +22,9 @@ class NeuralHarmonizerLoss(RegularizationMethod):
         mb_pred = model(mb_x)
 
         # Generate a saliency map
-        sa_maps = _saliency_map(inputs=mb_x, targets=mb_y, outputs=mb_pred)
+        sa_maps = compute_saliency_map(
+            inputs=mb_x, targets=mb_y, outputs=mb_pred
+        )
 
         # Unsqueeze to obtain channels
         heatmaps_preprocess = mb_heatmap
@@ -34,8 +36,8 @@ class NeuralHarmonizerLoss(RegularizationMethod):
         #     sa_maps.unsqueeze(1), size=mb_heatmap_dims)
 
         # Standardize cut procedure
-        sa_maps_preprocess = _standardize_cut(sa_maps)
-        heatmaps_preprocess = _standardize_cut(heatmaps_preprocess)
+        sa_maps_preprocess = standardize_cut(sa_maps)
+        heatmaps_preprocess = standardize_cut(heatmaps_preprocess)
 
         # Get max
         with torch.no_grad():
@@ -46,14 +48,14 @@ class NeuralHarmonizerLoss(RegularizationMethod):
                 + 1e6
             )
             _hm_max = (
-                torch.amax(heatmaps_preprocess, dim=(2, 3), keepdims=True) + 1e6
+                torch.amax(heatmaps_preprocess, dim=(2, 3), keepdim=True) + 1e6
             )
 
             # Normalize the true heatmaps according to the saliency maps
             heatmaps_preprocess = heatmaps_preprocess / _hm_max * _sa_max
 
         # Pyramidal loss
-        pyramidal_loss = _pyramidal_mse(
+        pyramidal_loss = compute_pyramidal_mse(
             sa_maps_preprocess, heatmaps_preprocess, mb_tokens
         )
 

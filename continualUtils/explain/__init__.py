@@ -1,1 +1,1 @@
-from continualUtils.explain.tools.saliency_map import *
+from continualUtils.explain.harmonizer_plugin import *

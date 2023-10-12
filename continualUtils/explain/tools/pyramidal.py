@@ -4,43 +4,7 @@ import torch
 import torch.nn.functional as F
 
 
-def _saliency_map(outputs, inputs, targets, create_graph=True):
-    # ex_batch_size = outputs.size()[0]
-    # ex_index = outputs.argmax(dim=-1).view(-1, 1)
-    # ex_one_hot = torch.zeros_like(outputs)
-    # ex_one_hot.scatter_(-1, ex_index, 1.)
-    # ex_out = torch.sum(ex_one_hot * outputs)
-
-    # targets = targets.to(torch.long)
-    # DEBUG!!!! chang eto 1000
-    targets_one_hot = F.one_hot(targets, num_classes=1000)
-    # targets_one_hot = F.one_hot(targets, num_classes=200)
-
-    # ATTEMPT ONE
-    # outputs_reduced = torch.sum(outputs * targets_one_hot, dim=-1)
-    # grads = [torch.autograd.grad(outputs=out, inputs=mb_x, create_graph=create_graph)[
-    # 0][i].unsqueeze(0) for i, out in enumerate(mb_pred_reduced)]
-    # grads = torch.cat(grads, dim=0)
-
-    # ATTEMPT TWO
-    # outputs_reduced = torch.sum(outputs * targets_one_hot, dim=-1)
-    # grads = torch.autograd.grad(outputs=outputs_reduced, inputs=inputs,
-    #                             grad_outputs=torch.ones_like(outputs_reduced), create_graph=create_graph)[0]
-    # grads = torch.mean(grads, dim=1, keepdim=True)
-
-    # ATTEMPT THREE
-    outputs_reduced = torch.sum(outputs * targets_one_hot)
-    grads = torch.autograd.grad(
-        outputs=outputs_reduced, inputs=inputs, create_graph=create_graph
-    )[0]
-    weights = grads.mean(dim=(2, 3)).unsqueeze(-1).unsqueeze(-1)
-    maps = F.relu((grads * weights).sum(dim=1))
-
-    # unsqueeze in channel dim
-    return maps.unsqueeze(1)
-
-
-def _standardize_cut(heatmaps, axes=(2, 3), epsilon=1e-5):
+def standardize_cut(heatmaps, axes=(2, 3), epsilon=1e-5):
     if heatmaps.dim() != 4:
         raise ValueError(
             f"Ensure that heatmaps are in NCHW cuDNN format, there are currently {heatmaps.dim()} dims"
@@ -57,7 +21,7 @@ def _standardize_cut(heatmaps, axes=(2, 3), epsilon=1e-5):
     return heatmaps
 
 
-def _pyramidal_mse(predicted_maps, true_maps, mb_tokens, num_levels=5):
+def compute_pyramidal_mse(predicted_maps, true_maps, mb_tokens, num_levels=5):
     pyramid_y = _pyramidal_representation(true_maps, num_levels)
     pyramid_y_pred = _pyramidal_representation(predicted_maps, num_levels)
 
