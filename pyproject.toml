@@ -28,6 +28,7 @@ optional = true
 datasets = "^2.14.5"
 pytest = "^7.4"
 grad-cam = "^1.4.8"
+opencv-python-headless = "*"
 
 [tool.poetry.scripts]
 devtest = "tests.run_tests:main"
@@ -63,6 +64,7 @@ filterwarnings = [
 # system, and so shouldn't trigger E1101 when accessed. Python regular
 # expressions are accepted.
 generated-members = "torch.*, avalanche.*"
+disable = "c0114"
 
 [[tool.poetry.source]]
 name = "torch"

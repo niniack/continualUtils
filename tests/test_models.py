@@ -1,7 +1,4 @@
-import pytest
 import torch
-from torch.utils.data import DataLoader
-from torchvision.datasets import CIFAR10
 
 
 def test_model_accuracy(pretrained_resnet18, img_tensor_list):

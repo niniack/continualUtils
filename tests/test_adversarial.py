@@ -1,6 +1,5 @@
 import torch
-from avalanche.evaluation.metrics import accuracy_metrics
-from avalanche.training.plugins import EvaluationPlugin, EWCPlugin
+from avalanche.training.plugins import EWCPlugin
 from avalanche.training.templates import SupervisedTemplate
 from torch.nn import CrossEntropyLoss
 from torch.optim import SGD
@@ -21,7 +20,7 @@ def test_adversarial_uap(pretrained_resnet18, img_tensor_dataset):
     transform = attack(
         img_tensor_dataset,
         pretrained_resnet18,
-        learning_rate=0.01,
+        learning_rate=0.1,
         iterations=10,
         eps=eps,
         device=torch.device("cpu"),
@@ -35,6 +34,7 @@ def test_adversarial_uap(pretrained_resnet18, img_tensor_dataset):
 
 
 def test_avalanche_adversarial_plugin(av_simple_mlp, av_split_permuted_mnist):
+    """Test the universal adversarial plugin"""
     # loggers = []
     # loggers.append(InteractiveLogger())
 
@@ -55,20 +55,20 @@ def test_avalanche_adversarial_plugin(av_simple_mlp, av_split_permuted_mnist):
     # )
 
     # Continual learning strategy
-    ewc = EWCPlugin(ewc_lambda=0.001)
+    ewc = EWCPlugin(ewc_lambda=0.1)
     adv_replay = AdversarialReplayPlugin()
     strategy = SupervisedTemplate(
         av_simple_mlp,
         optimizer,
         criterion,
-        train_mb_size=2048,
+        train_mb_size=4096,
         train_epochs=2,
-        eval_mb_size=2048,
+        eval_mb_size=4096,
         plugins=[ewc, adv_replay],
     )
 
     # train and test loop
     results = []
     for train_task in train_stream:
-        strategy.train(train_task, num_workers=2)
+        strategy.train(train_task, num_workers=8)
         results.append(strategy.eval(test_stream))

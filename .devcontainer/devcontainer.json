@@ -13,7 +13,10 @@
 		"--ulimit",
 		"stack=67108864"
 	],
-	"mounts":[],
+	"mounts": [
+		"source=/mnt,target=/mnt,type=bind",
+		"source=${localEnv:HOME}/datasets/,target=/root/datasets,type=bind"
+	],
 	"customizations": {
 		"vscode": {
 			"settings": {

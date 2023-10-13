@@ -1,10 +1,14 @@
 import numpy as np
+from avalanche.benchmarks import NCScenario
 from torch.testing import assert_close
 
+from continualUtils.benchmarks import SplitClickMe
 from continualUtils.benchmarks.datasets.preprocess import preprocess_input
 
 
 def test_normalize_np_image():
+    """Test normalizing a numpy image"""
+
     # Create a 3D tensor
     np_img = np.array(
         [
@@ -26,3 +30,11 @@ def test_normalize_np_image():
 
     # Assert that the output is as expected
     assert_close(normalized_img, expected_img, rtol=1e-03, atol=1e-03)
+
+
+def test_load_splitme():
+    """Test loading the SplitClickMe benchmark"""
+    split_clickme = SplitClickMe(
+        n_experiences=10, root="/mnt/datasets/clickme", seed=42
+    )
+    assert isinstance(split_clickme, NCScenario)

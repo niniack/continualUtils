@@ -1,14 +1,13 @@
-import matplotlib.pyplot as plt
-import pytest
 import torch
-from pytorch_grad_cam import GradCAM
-from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
 
-from continualUtils.explain import compute_saliency_map
-from continualUtils.models import PretrainedResNet18
+from continualUtils.explain.tools import compute_saliency_map
+
+# from pytorch_grad_cam import GradCAM
+# from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
 
 
 def test_compute_saliency_map(pretrained_resnet18, img_tensor_list):
+    """Testing saliency map"""
     model = pretrained_resnet18
     inputs = img_tensor_list[0].requires_grad_(True)
     outputs = model.forward(img_tensor_list[0])
@@ -25,13 +24,13 @@ def test_compute_saliency_map(pretrained_resnet18, img_tensor_list):
         saliency_map_np.max() - saliency_map_np.min()
     )
 
-    # Compare with baseline
-    cam_engine = GradCAM(
-        model=model,
-        target_layers=[model.model.resnet.encoder.stages[-1]],
-        use_cuda=True,
-    )
-    cam = cam_engine(input_tensor=inputs, targets=[ClassifierOutputTarget(281)])
+    # # Compare with baseline
+    # cam_engine = GradCAM(
+    #     model=model,
+    #     target_layers=[model.model.resnet.encoder.stages[-1]],
+    #     use_cuda=True,
+    # )
+    # cam = cam_engine(input_tensor=inputs, targets=[ClassifierOutputTarget(281)])
 
     # # Display the saliency map
     # plt.imshow(cam.transpose(1, 2, 0), cmap="hot")
