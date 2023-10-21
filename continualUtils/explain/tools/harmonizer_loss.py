@@ -1,7 +1,4 @@
-import matplotlib.pyplot as plt
-import numpy as np
 import torch
-import torch.nn.functional as F
 from avalanche.training.regularization import RegularizationMethod
 
 from continualUtils.explain.tools import (
@@ -10,10 +7,13 @@ from continualUtils.explain.tools import (
     standardize_cut,
 )
 
-# from .loss_utils import _alt_saliency_map
-
 
 class NeuralHarmonizerLoss(RegularizationMethod):
+    """Neural Harmonizer
+
+    This method applies the neural harmonizer loss
+    """
+
     def __init__(self, weight):
         self.weight = weight
 
@@ -61,5 +61,5 @@ class NeuralHarmonizerLoss(RegularizationMethod):
 
         return self.weight * pyramidal_loss
 
-    def update(self):
-        return
+    def update(self, *args, **kwargs):
+        pass

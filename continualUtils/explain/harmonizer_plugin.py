@@ -1,5 +1,4 @@
 import torch
-from avalanche.evaluation.metric_results import MetricValue
 from avalanche.training.plugins.strategy_plugin import SupervisedPlugin
 
 from continualUtils.benchmarks.datasets.clickme import (
@@ -50,21 +49,14 @@ from continualUtils.explain.tools.harmonizer_loss import NeuralHarmonizerLoss
 
 
 class NeuralHarmonizerPlugin(SupervisedPlugin):
-    """Harmonization plugin"""
+    """Neural Harmonizer plugin"""
 
     def __init__(self, weight=1):
         super().__init__()
         self.weight = weight
         self.harmonizer = NeuralHarmonizerLoss(weight)
 
-    # # EXPERIMENTAL
-    # # TODO: Is this where we should initialize CAM extractor?
-    # def before_training_exp(self, strategy, *args, **kwargs):
-    #     # Set the CAM for this training experience
-    #     self.cam = GradCAM(model=strategy.model,
-    #                        target_layer=self.target_layer)
-
-    def before_backward(self, strategy, **kwargs):
+    def before_backward(self, strategy, *args, **kwargs):
         cloned_mb_x = strategy.mb_x.detach()
 
         if not cloned_mb_x.requires_grad:
@@ -83,19 +75,17 @@ class NeuralHarmonizerPlugin(SupervisedPlugin):
             strategy.mb_tokens,
         )
 
-        # Add the harmonizer loss to the overall loss
-        # DEBUG make sure it ends up being +=
         strategy.loss += harmonizer_loss
-        # strategy.loss = harmonizer_loss
+        strategy.harmonizer_loss = harmonizer_loss
 
-        if torch.is_tensor(harmonizer_loss):
-            harmonizer_loss = harmonizer_loss.cpu().item()
+        # if torch.is_tensor(harmonizer_loss):
+        #     harmonizer_loss = harmonizer_loss.cpu().item()
 
-        step = strategy.clock.total_iterations
-        exp_counter = strategy.clock.train_exp_counter
-        mname = "harmonizer_loss/" + "exp" + str(exp_counter)
-        mval = MetricValue(self, mname, harmonizer_loss, step)
-        strategy.evaluator.publish_metric_value(mval)
+        # step = strategy.clock.total_iterations
+        # exp_counter = strategy.clock.train_exp_counter
+        # mname = "harmonizer_loss/" + "exp" + str(exp_counter)
+        # mval = MetricValue(self, mname, harmonizer_loss, step)
+        # strategy.evaluator.publish_metric_value(mval)
 
     # # TODO: is this relevant?
     # def after_training_exp(self, strategy, **kwargs):
@@ -142,6 +132,4 @@ class NeuralHarmonizerPlugin(SupervisedPlugin):
 
     # Avalanche defines loss *just* before this callback
     def after_eval_iteration(self, strategy, *args, **kwargs):
-        # DEBUG make sure it ends up being +=
         strategy.loss += strategy.mb_harmonizer_loss
-        # strategy.loss = strategy.mb_harmonizer_loss

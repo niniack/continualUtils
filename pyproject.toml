@@ -64,7 +64,7 @@ filterwarnings = [
 # system, and so shouldn't trigger E1101 when accessed. Python regular
 # expressions are accepted.
 generated-members = "torch.*, avalanche.*"
-disable = "c0114"
+disable = "c0114, r0913" # disable missing-module-docstring, too many arguments
 
 [[tool.poetry.source]]
 name = "torch"
