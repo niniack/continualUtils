@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "continualUtils"
-version = "0.0.2.post17.dev0+7932ca4"
+version = "0.0.2.post29.dev0+c9c79e2"
 description = "Additional functionalities that just work with Avalanche"
 license = "MIT"
 authors = ["Nishant S. Aswani <nishantaswani@nyu.edu>"]
@@ -16,9 +16,9 @@ transformers = "^4.33.3"
 optional = true
 
 [tool.poetry.group.docker.dependencies]
-torch = {version = "2.0.0", source = "torch"}
-torchvision = {version = "0.15.1", source = "torch"}
-torchaudio = {version = "2.0.1", source = "torch"}
+torch = {version = "<2.0.0", source = "torch"}
+torchvision = {version = "<0.15", source = "torch"}
+torchaudio = {version = "<2.0", source = "torch"}
 pylint = "^3.0.0"
 
 [tool.poetry.group.test]
@@ -68,5 +68,5 @@ disable = "c0114"
 
 [[tool.poetry.source]]
 name = "torch"
-url = "https://download.pytorch.org/whl/cu118"
+url = "https://download.pytorch.org/whl/cu117"
 priority = "explicit"
