@@ -1,3 +1,5 @@
+import logging
+
 import pytest
 import torch
 import torchvision.transforms as transforms
@@ -7,6 +9,7 @@ from datasets import load_dataset
 from PIL import Image
 from torch.utils.data import TensorDataset
 
+from continualUtils.benchmarks import SplitClickMe
 from continualUtils.models import PretrainedResNet18
 
 
@@ -14,6 +17,18 @@ from continualUtils.models import PretrainedResNet18
 def pretrained_resnet18():
     model = PretrainedResNet18(device=torch.device("cpu"))
     return model
+
+
+@pytest.fixture
+def split_clickme_benchmark():
+    split_clickme = SplitClickMe(
+        n_experiences=1000,
+        root="/mnt/datasets/clickme",
+        seed=42,
+        dummy=True,
+        return_task_id=True,
+    )
+    return split_clickme
 
 
 @pytest.fixture
@@ -80,3 +95,15 @@ def av_split_permuted_mnist():
 def av_simple_mlp():
     model = SimpleMLP(num_classes=10)
     return model
+
+
+@pytest.fixture(scope="function")
+def logger():
+    # Set up logging format
+    format = "%(asctime)s [%(levelname)s] %(message)s"
+    logging.basicConfig(format=format, level=logging.DEBUG)
+
+    logger = logging.getLogger("pytest")
+    logger.debug("Logging setup complete.")
+
+    return logger
