@@ -14,8 +14,9 @@ class NeuralHarmonizerLoss(RegularizationMethod):
     This method applies the neural harmonizer loss
     """
 
-    def __init__(self, weight):
+    def __init__(self, weight: float, epsilon: float = 1e-8):
         self.weight = weight
+        self.epsilon = epsilon
 
     def __call__(self, mb_x, mb_y, mb_heatmap, model, mb_tokens):
         # Forward pass
@@ -45,10 +46,11 @@ class NeuralHarmonizerLoss(RegularizationMethod):
                 torch.amax(
                     sa_maps_preprocess.detach(), dim=(2, 3), keepdim=True
                 )
-                + 1e6
+                + self.epsilon
             )
             _hm_max = (
-                torch.amax(heatmaps_preprocess, dim=(2, 3), keepdim=True) + 1e6
+                torch.amax(heatmaps_preprocess, dim=(2, 3), keepdim=True)
+                + self.epsilon
             )
 
             # Normalize the true heatmaps according to the saliency maps
