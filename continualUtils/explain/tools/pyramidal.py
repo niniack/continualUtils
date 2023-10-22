@@ -4,7 +4,15 @@ import torch
 import torch.nn.functional as F
 
 
-def standardize_cut(heatmaps, axes=(2, 3), epsilon=1e-5):
+def standardize_cut(heatmaps, axes=(2, 3), epsilon=1e-12):
+    """_summary_
+
+    :param heatmaps: _description_
+    :param axes: _description_, defaults to (2, 3)
+    :param epsilon: _description_, defaults to 1e-5
+    :raises ValueError: _description_
+    :return: _description_
+    """
     if heatmaps.dim() != 4:
         raise ValueError(
             f"Ensure that heatmaps are in NCHW cuDNN format, there are currently {heatmaps.dim()} dims"
@@ -16,12 +24,22 @@ def standardize_cut(heatmaps, axes=(2, 3), epsilon=1e-5):
     heatmaps = heatmaps - means
     heatmaps = heatmaps / (stds + epsilon)
 
+    # Grab the positive parts of the explanation
     heatmaps = F.relu(heatmaps)
 
     return heatmaps
 
 
 def compute_pyramidal_mse(predicted_maps, true_maps, mb_tokens, num_levels=5):
+    """Compute the pyramidal versin of the mean squared error. Converts
+    maps to pyramidal representation and then computes the mse
+
+    :param predicted_maps: Output heatmaps from the model
+    :param true_maps: Ground truth maps
+    :param mb_tokens: Tokens from the dataset
+    :param num_levels: The number of downsampled pyramidal representations, defaults to 5
+    :return: Mean loss of all the representations
+    """
     pyramid_y = _pyramidal_representation(true_maps, num_levels)
     pyramid_y_pred = _pyramidal_representation(predicted_maps, num_levels)
 
@@ -32,14 +50,12 @@ def compute_pyramidal_mse(predicted_maps, true_maps, mb_tokens, num_levels=5):
 
     return torch.mean(torch.stack(pyramid_loss), dim=0)
 
-    # # DEBUG
-    # pyramid_loss = _mse(predicted_maps, true_maps, mb_tokens)
-    # return torch.mean(pyramid_loss, dim=0)
-
 
 def _mse(heatmaps_a, heatmaps_b, tokens):
-    # return torch.mean(torch.square(heatmaps_a - heatmaps_b))
-    return F.mse_loss(heatmaps_a, heatmaps_b)
+    return torch.mean(
+        F.mse_loss(heatmaps_a, heatmaps_b, reduction="none")
+        * tokens[:, None, None, None]
+    )
 
 
 def _pyramidal_representation(maps, num_levels):
