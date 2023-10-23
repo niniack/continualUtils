@@ -1,11 +1,10 @@
 import os
 from functools import reduce
-from pathlib import Path
+from typing import List, Tuple, Union
 
 import torch
-from avalanche.models import MultiHeadClassifier, MultiTaskModule
-from torch import nn
-from transformers import ResNetConfig, ResNetForImageClassification, ResNetModel
+from torch import Tensor
+from transformers import ResNetConfig, ResNetForImageClassification
 
 from continualUtils.models import BaseModel
 
@@ -47,7 +46,7 @@ class CustomResNet50(BaseModel):
             num_labels=num_classes,
         )
 
-        self._model = ResNetForImageClassification(configuration).to(device)
+        self._model = ResNetForImageClassification(configuration).to(device)  # type: ignore
 
         self._hidden_layers = [
             "resnet.embedder",
@@ -59,15 +58,15 @@ class CustomResNet50(BaseModel):
         self._num_hidden = len(self.hidden_layers)
 
     @property
-    def model(self):
-        return self._model
+    def model(self) -> ResNetForImageClassification:
+        return self._model  # type: ignore
 
     @property
-    def hidden_layers(self):
+    def hidden_layers(self) -> List:
         return self._hidden_layers
 
     @property
-    def num_hidden(self):
+    def num_hidden(self) -> int:
         return self._num_hidden
 
     def _save_weights_impl(self, dir_name):
@@ -89,16 +88,24 @@ class CustomResNet50(BaseModel):
         print(f"Loading from {dir_name}")
         # Load model
         self._model = self.model.from_pretrained(dir_name)
-        self._model = self.model.to(self.device)
+        self._model = self.model.to(self.device)  # type: ignore
 
-    def forward(self, x, task_labels=None):
+    def forward(
+        self, x, task_labels=None
+    ) -> Union[Tuple[Tensor, Tensor], Tensor]:
+        """Overrides forward method
+
+        :param x: NCHW input
+        :param task_labels: task labels for multihead, defaults to None
+        :return: classifier output
+        """
         if self.is_multihead:
             out = self.model.resnet(
                 x, output_hidden_states=self.output_hidden, return_dict=True
             )
             # For multihead situation, must provide task labels!
             assert (
-                task_labels != None
+                task_labels is not None
             ), "Failed to provide task labels for multihead classifier"
 
             # Reshape pooler output

@@ -122,7 +122,7 @@ class BaseModel(ABC, MultiTaskModule):
         pass
 
     @abstractmethod
-    def forward(self):
+    def forward(self, *args, **kwargs):
         pass
 
     @abstractmethod
