@@ -2,12 +2,12 @@ import logging
 
 import pytest
 import torch
-import torchvision.transforms as transforms
 from avalanche.benchmarks.classic import PermutedMNIST
 from avalanche.models import SimpleMLP
 from datasets import load_dataset
 from PIL import Image
 from torch.utils.data import TensorDataset
+from torchvision import transforms
 
 from continualUtils.benchmarks import SplitClickMe
 from continualUtils.models import PretrainedResNet18

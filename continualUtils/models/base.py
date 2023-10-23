@@ -5,23 +5,28 @@ from pathlib import Path
 import torch
 import torch.backends.cudnn
 from avalanche.models import MultiHeadClassifier, MultiTaskModule
+from torch import device, nn
 
 
 class BaseModel(ABC, MultiTaskModule):
+    """Base model to inherit for continualTrain"""
+
     def __init__(
         self,
-        seed,
-        output_hidden,
-        is_multihead,
-        in_features,
-        out_features,
-        device,
+        seed: int,
+        output_hidden: bool,
+        is_multihead: bool,
+        in_features: int,
+        out_features: int,
+        device: device,
+        init_weights: bool = True,
     ):
         super().__init__()
         self.seed = seed
         self.output_hidden = output_hidden
         self.is_multihead = is_multihead
         self.device = device
+        self.init_weights = init_weights
 
         # Set seed for reproducibility
         torch.manual_seed(seed)
@@ -31,10 +36,27 @@ class BaseModel(ABC, MultiTaskModule):
             torch.backends.cudnn.deterministic = True
             torch.backends.cudnn.benchmark = False
 
+        # Set classifier style
         if self.is_multihead:
             self.multihead_classifier = MultiHeadClassifier(
                 in_features=in_features, initial_out_features=out_features
             ).to(device)
+
+        # Initialize weights
+        if self.init_weights:
+            self._init_weights()
+
+    def _init_weights(self):
+        """
+        Applies the Kaiming Normal initialization to all weights in the model.
+        """
+        for m in self.modules():
+            if isinstance(m, (nn.Conv2d, nn.Linear)):
+                nn.init.kaiming_normal_(
+                    m.weight, mode="fan_out", nonlinearity="relu"
+                )
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
 
     def toggle_hidden(self, output_hidden):
         self.output_hidden = output_hidden

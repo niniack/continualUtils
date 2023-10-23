@@ -12,7 +12,13 @@ from continualUtils.models import BaseModel
 
 class CustomResNet50(BaseModel):
     def __init__(
-        self, num_classes, device, seed=42, output_hidden=False, multihead=False
+        self,
+        num_classes: int,
+        device: torch.device,
+        seed: int = 42,
+        output_hidden: bool = False,
+        multihead: bool = False,
+        init_weights: bool = True,
     ):
         """
         Returns:
@@ -25,6 +31,7 @@ class CustomResNet50(BaseModel):
             device=device,
             in_features=2048,
             out_features=num_classes,
+            init_weights=init_weights,
         )
 
         # Initializing a model (with random weights) from
