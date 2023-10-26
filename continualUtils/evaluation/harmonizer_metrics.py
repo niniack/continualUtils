@@ -93,12 +93,34 @@ class HarmonizerPluginMetric(GenericPluginMetric[float, HarmonizerLossMetric]):
         )
 
 
+class MinibatchHarmonizerLoss(HarmonizerPluginMetric):
+    """
+    The minibatch plugin harmonizer loss metric.
+    This metric only works at training time.
+
+    This metric computes the average harmonizer loss over patterns
+    from a single minibatch.
+    It reports the result after each iteration.
+    """
+
+    def __init__(self):
+        """
+        Creates an instance of the MinibatchAccuracy metric.
+        """
+        super().__init__(
+            reset_at="iteration", emit_at="iteration", mode="train"
+        )
+
+    def __str__(self):
+        return "HarmonizerLoss_Iteration"
+
+
 class EpochHarmonizerLoss(HarmonizerPluginMetric):
     """
     The average harmonizer loss over a single training epoch.
     This plugin metric only works at training time.
 
-    The accuracy will be logged after each training epoch by computing
+    The harmonizer loss will be logged after each training epoch by computing
     the number of correctly predicted patterns during the epoch divided by
     the overall number of patterns encountered in that epoch.
     """
@@ -108,9 +130,7 @@ class EpochHarmonizerLoss(HarmonizerPluginMetric):
         Creates an instance of the EpochAccuracy metric.
         """
 
-        super(EpochHarmonizerLoss, self).__init__(
-            reset_at="epoch", emit_at="epoch", mode="train"
-        )
+        super().__init__(reset_at="epoch", emit_at="epoch", mode="train")
 
     def __str__(self):
         return "HarmonizerLoss_Epoch"
@@ -127,7 +147,7 @@ class ExperienceHarmonizerLoss(HarmonizerPluginMetric):
         """
         Creates an instance of ExperienceHarmonizerLoss metric
         """
-        super(ExperienceHarmonizerLoss, self).__init__(
+        super().__init__(
             reset_at="experience", emit_at="experience", mode="eval"
         )
 
@@ -137,6 +157,7 @@ class ExperienceHarmonizerLoss(HarmonizerPluginMetric):
 
 def harmonizer_metrics(
     *,
+    minibatch=False,
     epoch=False,
     experience=False,
 ) -> List[HarmonizerPluginMetric]:
@@ -145,8 +166,10 @@ def harmonizer_metrics(
     plugin metrics.
 
 
+    :param minibatch: If True, will return a metric able to log
+        the minibatch harmonizer loss at training time.
     :param epoch: If True, will return a metric able to log
-        the epoch accuracy at training time.
+        the epoch harmonizer loss at training time.
     :param experience: If True, will return a metric able to log
         the accuracy on each evaluation experience.
 
@@ -155,6 +178,8 @@ def harmonizer_metrics(
     """
 
     metrics: List[HarmonizerPluginMetric] = []
+    if minibatch:
+        metrics.append(MinibatchHarmonizerLoss())
 
     if epoch:
         metrics.append(EpochHarmonizerLoss())
