@@ -18,9 +18,9 @@ class NeuralHarmonizerLoss(RegularizationMethod):
         self.weight = weight
         self.epsilon = epsilon
 
-    def __call__(self, mb_x, mb_y, mb_heatmap, model, mb_tokens):
+    def __call__(self, mb_x, mb_y, mb_heatmap, model, mb_tokens, mb_tasks):
         # Forward pass
-        mb_pred = model(mb_x)
+        mb_pred = model(mb_x, mb_tasks)
 
         # Generate a saliency map
         sa_maps = compute_saliency_map(

@@ -59,12 +59,13 @@ class NeuralHarmonizerPlugin(SupervisedPlugin):
     def before_backward(self, strategy, *args, **kwargs):
         cloned_mb_x = strategy.mb_x.detach()
 
-        if not cloned_mb_x.requires_grad:
+        if cloned_mb_x.requires_grad is False:
             cloned_mb_x.requires_grad_(True)
 
         # Get the heatmaps and tokens
         strategy.mb_heatmap = strategy.mbatch[HEATMAP_INDEX]
         strategy.mb_tokens = strategy.mbatch[TOKEN_INDEX]
+        strategy.mb_tasks = strategy.mbatch[4]
 
         # Uses the `__call__` method
         harmonizer_loss = self.harmonizer(
@@ -73,6 +74,7 @@ class NeuralHarmonizerPlugin(SupervisedPlugin):
             strategy.mb_heatmap,
             strategy.model,
             strategy.mb_tokens,
+            strategy.mb_tasks,
         )
 
         strategy.loss += harmonizer_loss
