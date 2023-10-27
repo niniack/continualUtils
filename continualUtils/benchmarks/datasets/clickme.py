@@ -70,13 +70,12 @@ class ClickMeDataset(Dataset):
     def __getitem__(self, idx):
         """
         Returns a batch of images, labels, and heatmaps as Torch tensors
-
         Note: due to how Avalanche processes the batch, we must preserve the images, labels, and heatmaps order.
         """
-
-        np_img = np.load(str(self.files[idx]))["image"]
-        np_heatmap = np.load(str(self.files[idx]))["heatmap"]
-        np_label = np.load(str(self.files[idx]))["label"]
+        data = np.load(str(self.files[idx]))
+        np_img = data["image"]
+        np_heatmap = data["heatmap"]
+        np_label = data["label"]
 
         np_img = preprocess_input(np_img)
         image = torch.from_numpy(np.transpose(np_img, (2, 0, 1))).float()
