@@ -1,4 +1,5 @@
 import torch
+import torch.nn.functional as F
 from avalanche.training.regularization import RegularizationMethod
 
 from continualUtils.explain.tools import (
@@ -19,49 +20,78 @@ class NeuralHarmonizerLoss(RegularizationMethod):
         self.epsilon = epsilon
 
     def __call__(self, mb_x, mb_y, mb_heatmap, model, mb_tokens, mb_tasks):
-        # Forward pass
-        mb_pred = model(mb_x, mb_tasks)
+        # The input must have gradients turned on
+        if not mb_x.requires_grad:
+            mb_x.requires_grad_(True)
 
         # Generate a saliency map
-        sa_maps = compute_saliency_map(
-            inputs=mb_x, targets=mb_y, outputs=mb_pred
+        # Make targets one hot for our pure fn
+        mb_y = F.one_hot(mb_y, model.num_classes)
+        output_maps = compute_saliency_map(
+            pure_function=compute_score,
+            model=model,
+            inputs=mb_x,
+            tasks=mb_tasks,
+            targets=mb_y,
         )
 
-        # Unsqueeze to obtain channels
-        heatmaps_preprocess = mb_heatmap
-
-        # EXPERIMENTAL
-        # Interpolation of SA map
-        # mb_heatmap_dims = mb_heatmap.shape[-2:]
-        # sa_maps_preprocess = torch.nn.functional.interpolate(
-        #     sa_maps.unsqueeze(1), size=mb_heatmap_dims)
-
         # Standardize cut procedure
-        sa_maps_preprocess = standardize_cut(sa_maps)
-        heatmaps_preprocess = standardize_cut(heatmaps_preprocess)
+        output_maps_standardized = standardize_cut(output_maps)
+        ground_maps_standardized = standardize_cut(mb_heatmap)
 
-        # Get max
+        # Normalize the true heatmaps according to the saliency maps
+        # No gradients needed, we are just updating the ground truth maps
         with torch.no_grad():
-            _sa_max = (
-                torch.amax(
-                    sa_maps_preprocess.detach(), dim=(2, 3), keepdim=True
-                )
+            _om_max = (
+                torch.amax(output_maps_standardized, dim=(2, 3), keepdim=True)
                 + self.epsilon
             )
-            _hm_max = (
-                torch.amax(heatmaps_preprocess, dim=(2, 3), keepdim=True)
+            _gm_max = (
+                torch.amax(ground_maps_standardized, dim=(2, 3), keepdim=True)
                 + self.epsilon
             )
 
-            # Normalize the true heatmaps according to the saliency maps
-            heatmaps_preprocess = heatmaps_preprocess / _hm_max * _sa_max
+            ground_maps_standardized = (
+                ground_maps_standardized / _gm_max * _om_max
+            )
 
         # Pyramidal loss
         pyramidal_loss = compute_pyramidal_mse(
-            sa_maps_preprocess, heatmaps_preprocess, mb_tokens
+            output_maps_standardized, ground_maps_standardized, mb_tokens
         )
 
-        return self.weight * pyramidal_loss
+        return pyramidal_loss
 
     def update(self, *args, **kwargs):
         pass
+
+
+class OneHotException(Exception):
+    pass
+
+
+def compute_score(
+    x: torch.Tensor,
+    task: torch.Tensor,
+    y: torch.Tensor,
+    model: torch.nn.Module,
+) -> torch.Tensor:
+    """
+    Since vmap will unbatch and vectorize the computation, we
+    assume that all the inputs do not have a batch dimension.
+    """
+
+    # Batch
+    x = x.unsqueeze(0)
+    y = y.unsqueeze(0)
+    task = task.unsqueeze(0)
+
+    # Forward pass with cloned input
+    output = model(x, task)
+
+    if output.shape != y.shape:
+        raise OneHotException(
+            "The model outputs must be the shape as the target."
+        )
+    score = torch.sum(output * y)
+    return score
