@@ -31,6 +31,7 @@ class BaseModel(ABC, MultiTaskModule):
         self.is_multihead = is_multihead
         self.device = device
         self.init_weights = init_weights
+        self.num_classes = out_features
 
         # Set seed for reproducibility
         torch.manual_seed(seed)
