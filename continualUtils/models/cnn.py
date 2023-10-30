@@ -8,7 +8,7 @@ import torch.nn.functional as F
 from avalanche.models import MultiHeadClassifier, MultiTaskModule
 from torch import nn
 
-from continualUtils.models import BaseModel
+from continualUtils.models import BaseModel, MissingTasksException
 
 
 class CustomCNN(BaseModel):
@@ -21,7 +21,7 @@ class CustomCNN(BaseModel):
         Returns:
             Simple CNN model
         """
-        in_features = 4608
+        in_features = 401408
 
         super().__init__(
             seed=seed,
@@ -32,7 +32,9 @@ class CustomCNN(BaseModel):
             out_features=num_classes,
         )
 
-        self._model = Net(in_features=in_features, num_classes=num_classes)
+        self._model = Net(in_features=in_features, num_classes=num_classes).to(
+            device
+        )
         self._hidden_layers = ["features.0", "features.1"]
         self._num_hidden = len(self.hidden_layers)
 
@@ -67,10 +69,10 @@ class CustomCNN(BaseModel):
         # Get dictionary
         out = self.model.forward(x)
         if self.is_multihead:
-            # For multihead situation, must provide task labels!
-            assert (
-                task_labels != None
-            ), "Failed to provide task labels for multihead classifier"
+            if task_labels is None:
+                raise MissingTasksException(
+                    "Task labels must be provided for multihead classifiers"
+                )
 
             # Reshape pooler output
             pooler_out = out["pooler_output"].view(
@@ -101,7 +103,10 @@ class Net(nn.Module):
             nn.Sequential(
                 OrderedDict(
                     [
-                        ("convolution", nn.Conv2d(1, 16, kernel_size=3)),
+                        (
+                            "convolution",
+                            nn.Conv2d(3, 16, kernel_size=3, padding=1),
+                        ),  # Changed in_channels from 1 to 3, added padding to keep the feature map size
                         ("activation", nn.ReLU()),
                     ]
                 )
@@ -109,7 +114,10 @@ class Net(nn.Module):
             nn.Sequential(
                 OrderedDict(
                     [
-                        ("convolution", nn.Conv2d(16, 32, kernel_size=3)),
+                        (
+                            "convolution",
+                            nn.Conv2d(16, 32, kernel_size=3, padding=1),
+                        ),  # Added padding to keep the feature map size
                         ("activation", nn.ReLU()),
                         ("dropout", nn.Dropout2d()),
                     ]

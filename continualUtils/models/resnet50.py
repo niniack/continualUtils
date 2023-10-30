@@ -6,7 +6,7 @@ import torch
 from torch import Tensor
 from transformers import ResNetConfig, ResNetForImageClassification
 
-from continualUtils.models import BaseModel
+from continualUtils.models import BaseModel, MissingTasksException
 
 
 class CustomResNet50(BaseModel):
@@ -100,13 +100,14 @@ class CustomResNet50(BaseModel):
         :return: classifier output
         """
         if self.is_multihead:
+            if task_labels is None:
+                raise MissingTasksException(
+                    "Task labels must be provided for multihead classifiers"
+                )
+
             out = self.model.resnet(
                 x, output_hidden_states=self.output_hidden, return_dict=True
             )
-            # For multihead situation, must provide task labels!
-            assert (
-                task_labels is not None
-            ), "Failed to provide task labels for multihead classifier"
 
             # Reshape pooler output
             flat_pooler_out = out.pooler_output.view(

@@ -7,13 +7,11 @@ from avalanche.models import MultiHeadClassifier, MultiTaskModule
 from torch import nn
 from transformers import ResNetConfig, ResNetForImageClassification, ResNetModel
 
-from continualUtils.models import BaseModel
+from continualUtils.models import BaseModel, MissingTasksException
 
 
 class PretrainedResNet18(BaseModel):
-    def __init__(
-        self, device, seed=42, output_hidden=False, multihead=False
-    ):
+    def __init__(self, device, seed=42, output_hidden=False, multihead=False):
         """
         Returns:
             Pretrained ResNet18 from Microsoft
@@ -27,7 +25,9 @@ class PretrainedResNet18(BaseModel):
             out_features=1000,
         )
 
-        self._model = ResNetForImageClassification.from_pretrained("microsoft/resnet-18").to(device)
+        self._model = ResNetForImageClassification.from_pretrained(
+            "microsoft/resnet-18"
+        ).to(device)
         self._hidden_layers = []
         self._num_hidden = len(self.hidden_layers)
 
@@ -63,19 +63,20 @@ class PretrainedResNet18(BaseModel):
         # Load model
         self._model = self.model.from_pretrained(dir_name)
         self._model = self.model.to(self.device)
-    
+
     def get_hidden_layer(self, id):
         raise NotImplementedError("ToDo!")
 
-    def forward(self, x, labels=None):
+    def forward(self, x, task_labels=None):
         if self.is_multihead:
+            if task_labels is None:
+                raise MissingTasksException(
+                    "Task labels must be provided for multihead classifiers"
+                )
+
             out = self.model.resnet(
                 x, output_hidden_states=self.output_hidden, return_dict=True
             )
-            # For multihead situation, must provide task labels!
-            assert (
-                task_labels != None
-            ), "Failed to provide task labels for multihead classifier"
 
             # Reshape pooler output
             flat_pooler_out = out.pooler_output.view(
@@ -96,9 +97,6 @@ class PretrainedResNet18(BaseModel):
             return classifier_out, out.hidden_states
         else:
             return classifier_out
-
-
-
 
 
 class CustomResNet18(BaseModel):
@@ -181,13 +179,14 @@ class CustomResNet18(BaseModel):
 
     def forward(self, x, task_labels=None):
         if self.is_multihead:
+            if task_labels is None:
+                raise MissingTasksException(
+                    "Task labels must be provided for multihead classifiers"
+                )
+
             out = self.model.resnet(
                 x, output_hidden_states=self.output_hidden, return_dict=True
             )
-            # For multihead situation, must provide task labels!
-            assert (
-                task_labels != None
-            ), "Failed to provide task labels for multihead classifier"
 
             # Reshape pooler output
             flat_pooler_out = out.pooler_output.view(

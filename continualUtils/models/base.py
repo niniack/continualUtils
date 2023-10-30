@@ -8,6 +8,10 @@ from avalanche.models import MultiHeadClassifier, MultiTaskModule
 from torch import device, nn
 
 
+class MissingTasksException(Exception):
+    pass
+
+
 class BaseModel(ABC, MultiTaskModule):
     """Base model to inherit for continualTrain"""
 
