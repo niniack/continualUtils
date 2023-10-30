@@ -7,3 +7,9 @@ __pycache__/
 *.lock
 *.gz
 event.json
+*.dot
+*.png
+*
+!.*.*
+!*/
+!*.ipynb
