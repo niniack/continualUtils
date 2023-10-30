@@ -13,7 +13,9 @@ from continualUtils.explain.tools.pyramidal import (
 )
 
 
-def test_harmonizer_loss(pretrained_resnet18, split_clickme_benchmark):
+def test_harmonizer_loss_pretrained(
+    pretrained_resnet18, split_clickme_benchmark
+):
     # Set up benchmark
     train_stream = split_clickme_benchmark.train_stream
     exp_set = train_stream[0].dataset
@@ -55,7 +57,7 @@ def test_harmonizer_loss(pretrained_resnet18, split_clickme_benchmark):
         mb_heatmap=heatmap,
         model=model,
         mb_tokens=token,
-    )
+    )  # type: ignore
 
     assert torch.allclose(manual_loss, func_loss)
 
