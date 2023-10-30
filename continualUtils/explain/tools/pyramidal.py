@@ -45,13 +45,23 @@ def compute_pyramidal_mse(predicted_maps, true_maps, mb_tokens, num_levels=5):
 
     pyramid_loss = [
         _mse(pyramid_y[i], pyramid_y_pred[i], mb_tokens)
-        for i in range(num_levels)
+        for i in range(num_levels + 1)
     ]
 
     return torch.mean(torch.stack(pyramid_loss), dim=0)
 
 
 def _mse(heatmaps_a, heatmaps_b, tokens):
+    """Computes the mean squared error between two heatmaps,
+    if the token is set to 1, ignored if token is 0
+
+    :param heatmaps_a: heatmap NCHW
+    :param heatmaps_b: heatmap NCHW
+    :param tokens: Token from ClickMe
+    :return: mean squared error
+    """
+
+    # First compute error without reduction, to ensure tokens are accounted for
     return torch.mean(
         F.mse_loss(heatmaps_a, heatmaps_b, reduction="none")
         * tokens[:, None, None, None]
@@ -59,14 +69,6 @@ def _mse(heatmaps_a, heatmaps_b, tokens):
 
 
 def _pyramidal_representation(maps, num_levels):
-    # # DEBUG changing downsampling
-    # # Build a kernel
-    # # maps have shape NCHW
-    # kernel = _binomial_kernel(maps.shape[1])
-
-    # # annoying way to bring filter to same device
-    # kernel = kernel.cuda(maps.get_device()) if maps.is_cuda else kernel
-
     levels = [maps]
     for _ in range(num_levels):
         # # DEBUG changing downsampling
