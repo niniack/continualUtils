@@ -79,14 +79,14 @@ class ClickMeDataset(Dataset):
 
         np_img = preprocess_input(np_img)
         image = torch.from_numpy(np.transpose(np_img, (2, 0, 1))).float()
-        image = resize(image, size=224)
+        image = resize(image, size=224, antialias=False)
 
         # Process heatmap
         heatmap = torch.from_numpy(np_heatmap).float()
-        heatmap = resize(heatmap.unsqueeze(0), size=64)
+        heatmap = resize(heatmap.unsqueeze(0), size=64, antialias=False)
         heatmap = gaussian_blur(heatmap, kernel_size=(9, 9), sigma=(9, 9))
 
-        heatmap = resize(heatmap, size=224)
+        heatmap = resize(heatmap, size=224, antialias=False)
 
         label = np_label
         token = self.tokens[idx]
