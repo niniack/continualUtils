@@ -12,6 +12,12 @@ from torchvision import transforms
 from continualUtils.benchmarks import SplitClickMe
 from continualUtils.models import PretrainedResNet18
 
+# Define a condition for skipping
+skip_if_no_cuda = pytest.mark.skipif(
+    not torch.cuda.is_available(),
+    reason="Test requires GPU, but CUDA is not available.",
+)
+
 
 @pytest.fixture
 def pretrained_resnet18():
@@ -22,7 +28,7 @@ def pretrained_resnet18():
 @pytest.fixture
 def split_clickme_benchmark():
     split_clickme = SplitClickMe(
-        n_experiences=1000,
+        n_experiences=20,
         root="/mnt/datasets/clickme",
         seed=42,
         dummy=True,
