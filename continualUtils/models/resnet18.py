@@ -1,6 +1,7 @@
 import os
 from functools import reduce
 from pathlib import Path
+from typing import Optional
 
 import torch
 from avalanche.models import MultiHeadClassifier, MultiTaskModule
@@ -11,7 +12,14 @@ from continualUtils.models import BaseModel, MissingTasksException
 
 
 class PretrainedResNet18(BaseModel):
-    def __init__(self, device, seed=42, output_hidden=False, multihead=False):
+    def __init__(
+        self,
+        device: torch.device,
+        num_classes_per_head: Optional[int] = None,
+        seed=42,
+        output_hidden=False,
+        multihead=False,
+    ):
         """
         Returns:
             Pretrained ResNet18 from Microsoft
@@ -22,7 +30,8 @@ class PretrainedResNet18(BaseModel):
             is_multihead=multihead,
             device=device,
             in_features=512,
-            out_features=1000,
+            num_classes_per_head=num_classes_per_head,
+            num_classes_total=1000,
         )
 
         self._model = ResNetForImageClassification.from_pretrained(

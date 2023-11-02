@@ -1,11 +1,12 @@
 import os
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import Optional
 
 import torch
 import torch.backends.cudnn
 from avalanche.models import MultiHeadClassifier, MultiTaskModule
-from torch import device, nn
+from torch import nn
 
 
 class MissingTasksException(Exception):
@@ -21,17 +22,19 @@ class BaseModel(ABC, MultiTaskModule):
         output_hidden: bool,
         is_multihead: bool,
         in_features: int,
-        out_features: int,
-        device: device,
+        num_classes_total: int,
+        device: torch.device,
+        num_classes_per_head: Optional[int] = None,
         init_weights: bool = True,
     ):
         super().__init__()
         self.seed = seed
         self.output_hidden = output_hidden
         self.is_multihead = is_multihead
+        self.num_classes_per_head = num_classes_per_head
         self.device = device
         self.init_weights = init_weights
-        self.num_classes = out_features
+        self.num_classes_total = num_classes_total
 
         # Set seed for reproducibility
         torch.manual_seed(seed)
@@ -44,10 +47,15 @@ class BaseModel(ABC, MultiTaskModule):
         # Set classifier style
         if self.is_multihead:
             self.multihead_classifier = MultiHeadClassifier(
-                in_features=in_features, initial_out_features=out_features
+                in_features=in_features,
+                initial_out_features=(
+                    num_classes_total
+                    if num_classes_per_head is None
+                    else num_classes_per_head
+                ),
             ).to(device)
 
-        # Initialize weights
+        # Initialize weights with Kaiming init
         if self.init_weights:
             self._init_weights()
 
@@ -64,6 +72,10 @@ class BaseModel(ABC, MultiTaskModule):
                     nn.init.constant_(m.bias, 0)
 
     def toggle_hidden(self, output_hidden):
+        """Set whether model outputs hidden layers
+
+        :param output_hidden: Flag for outputting hidden layers
+        """
         self.output_hidden = output_hidden
 
     def adapt_model(self, experiences):
