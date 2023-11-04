@@ -3,7 +3,7 @@ Dataset access code adapted from the Harmonization project:
 https://github.com/serre-lab/Harmonization/blob/main/harmonization/common/clickme_dataset.py
 """
 
-import pickle
+import json
 from pathlib import Path
 from typing import Callable, Optional
 
@@ -49,10 +49,11 @@ class ClickMeDataset(Dataset):
 
         self.transform = transform
         # Load targets
-        target_path = self.full_path.joinpath("targets.pkl")
+        target_path = self.full_path.joinpath("metadata.json")
         if target_path.exists():
-            with open(target_path, "rb") as file:
-                self.targets = pickle.load(file)
+            with open(target_path, "r", encoding="utf-8") as meta_file:
+                metadata = json.load(meta_file)
+                self.targets = [metadata[file.name] for file in self.files]
         else:
             self.targets = [
                 int(np.load(str(self.files[x]))["label"])
