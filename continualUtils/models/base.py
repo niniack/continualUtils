@@ -1,4 +1,3 @@
-import os
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Optional
@@ -6,6 +5,7 @@ from typing import Optional
 import torch
 import torch.backends.cudnn
 from avalanche.models import MultiHeadClassifier, MultiTaskModule
+from functorch.experimental import replace_all_batch_norm_modules_
 from torch import nn
 
 
@@ -20,6 +20,7 @@ class BaseModel(ABC, MultiTaskModule):
         self,
         seed: int,
         device: torch.device,
+        model: torch.nn.Module,
         output_hidden: bool,
         is_multihead: bool,
         in_features: int,
@@ -29,12 +30,14 @@ class BaseModel(ABC, MultiTaskModule):
     ):
         super().__init__()
         self.seed = seed
+        self.device = device
+        self._model = model
         self.output_hidden = output_hidden
         self.is_multihead = is_multihead
-        self.num_classes_per_head = num_classes_per_head
-        self.device = device
-        self.init_weights = init_weights
+        self.in_features = (in_features,)
         self.num_classes_total = num_classes_total
+        self.num_classes_per_head = num_classes_per_head
+        self.init_weights = init_weights
 
         # Set seed for reproducibility
         torch.manual_seed(seed)
@@ -57,6 +60,10 @@ class BaseModel(ABC, MultiTaskModule):
         if self.init_weights:
             self._init_weights()
 
+        # Update the module in-place to not use running stats
+        # https://pytorch.org/functorch/stable/batch_norm.html
+        self._patch_batch_norm()
+
     def _init_weights(self):
         """
         Applies the Kaiming Normal initialization to all weights in the model.
@@ -68,6 +75,9 @@ class BaseModel(ABC, MultiTaskModule):
                 )
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
+
+    def _patch_batch_norm(self):
+        replace_all_batch_norm_modules_(self._model)
 
     def toggle_hidden(self, output_hidden):
         """Set whether model outputs hidden layers
