@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, List, Tuple, Union
 import cv2
 import numpy as np
 import torch
+import torch.nn.functional as F
 from avalanche.benchmarks.utils.data import AvalancheDataset
 from avalanche.evaluation.metric_definitions import PluginMetric
 from avalanche.evaluation.metric_results import (
@@ -222,7 +223,9 @@ class SaliencyMapSamplePlugin(PluginMetric):
     ) -> Tensor:
         # images = preprocess_input(images)
         inputs = images.to(strategy.device).requires_grad_(True)
-        targets = labels.to(strategy.device).long()
+        targets = F.one_hot(labels, strategy.model.num_classes_per_head).to(
+            strategy.device
+        )
 
         computed_maps = compute_saliency_map(
             pure_function=compute_score,
