@@ -21,14 +21,14 @@ class PretrainedResNet18(BaseModel):
         multihead: bool = False,
         seed: int = 42,
     ):
-        self._model = ResNetForImageClassification.from_pretrained(
+        _model = ResNetForImageClassification.from_pretrained(
             "microsoft/resnet-18"
         ).to(device)
 
         super().__init__(
             seed=seed,
             device=device,
-            model=self._model,
+            model=_model,
             output_hidden=output_hidden,
             is_multihead=multihead,
             in_features=512,
@@ -36,7 +36,7 @@ class PretrainedResNet18(BaseModel):
             num_classes_per_head=num_classes_per_head,
             init_weights=False,
         )
-
+        self._model = _model
         self._hidden_layers = []
         self._num_hidden = len(self.hidden_layers)
 
@@ -139,12 +139,12 @@ class CustomResNet18(BaseModel):
             downsample_in_first_stage=True,
         )
 
-        self._model = ResNetForImageClassification(configuration).to(device)
+        _model = ResNetForImageClassification(configuration).to(device)
 
         super().__init__(
             seed=seed,
             device=device,
-            model=self._model,
+            model=_model,
             output_hidden=output_hidden,
             is_multihead=multihead,
             in_features=512,
@@ -153,6 +153,7 @@ class CustomResNet18(BaseModel):
             init_weights=True,
         )
 
+        self._model = _model
         self._hidden_layers = [
             "resnet.embedder",
             "resnet.encoder.stages.0",

@@ -36,12 +36,12 @@ class CustomResNet50(BaseModel):
             downsample_in_first_stage=False,
         )
 
-        self._model = ResNetForImageClassification(configuration).to(device)  # type: ignore
+        _model = ResNetForImageClassification(configuration).to(device)  # type: ignore
 
         super().__init__(
             seed=seed,
             device=device,
-            model=self._model,
+            model=_model,
             output_hidden=output_hidden,
             is_multihead=multihead,
             in_features=512,
@@ -50,6 +50,7 @@ class CustomResNet50(BaseModel):
             init_weights=True,
         )
 
+        self._model = _model
         self._hidden_layers = [
             "resnet.embedder",
             "resnet.encoder.stages.0",
