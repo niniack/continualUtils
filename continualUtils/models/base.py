@@ -46,13 +46,11 @@ class BaseModel(ABC, MultiTaskModule):
 
         # Set classifier style
         if self.is_multihead:
+            if num_classes_per_head is None:
+                num_classes_per_head = num_classes_total
             self.multihead_classifier = MultiHeadClassifier(
                 in_features=in_features,
-                initial_out_features=(
-                    num_classes_total
-                    if num_classes_per_head is None
-                    else num_classes_per_head
-                ),
+                initial_out_features=num_classes_per_head,
             ).to(device)
 
         # Initialize weights with Kaiming init

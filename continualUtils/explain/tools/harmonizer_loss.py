@@ -26,7 +26,7 @@ class NeuralHarmonizerLoss(RegularizationMethod):
 
         # Generate a saliency map
         # Make targets one hot for our pure fn
-        mb_y = F.one_hot(mb_y, model.num_classes)
+        mb_y = F.one_hot(mb_y, model.num_classes_per_head)
         output_maps = compute_saliency_map(
             pure_function=compute_score,
             model=model,
