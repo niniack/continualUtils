@@ -84,10 +84,9 @@ def compute_score(
     # Batch
     x = x.unsqueeze(0)
     y = y.unsqueeze(0)
-    task = task.unsqueeze(0)
 
     # Forward pass with cloned input
-    output = model(x, task)
+    output = model(x, int(task[0]))
 
     if output.shape != y.shape:
         raise OneHotException(
