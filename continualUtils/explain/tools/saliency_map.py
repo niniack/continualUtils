@@ -22,7 +22,7 @@ def check_pure_function(func):
 
 def compute_saliency_map(
     pure_function: Callable,
-    model: torch.Tensor,
+    model: torch.nn.Module,
     inputs: torch.Tensor,
     tasks: torch.Tensor,
     targets: torch.Tensor,

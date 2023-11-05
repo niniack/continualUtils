@@ -18,6 +18,7 @@ from typing_extensions import Literal
 
 from continualUtils.benchmarks.datasets.clickme import HEATMAP_INDEX
 from continualUtils.explain.tools import compute_saliency_map
+from continualUtils.explain.tools.harmonizer_loss import compute_score
 
 if TYPE_CHECKING:
     from avalanche.training.templates import SupervisedTemplate
@@ -184,7 +185,7 @@ class SaliencyMapSamplePlugin(PluginMetric):
 
             # Run saliency map computation
             batch_computed_maps = self._compute_maps(
-                batch_images, batch_labels, strategy
+                batch_images, batch_labels, batch_tasks, strategy
             )
 
             # Grab only the needed number of samples
@@ -213,19 +214,22 @@ class SaliencyMapSamplePlugin(PluginMetric):
         )
 
     def _compute_maps(
-        self, images: Tensor, labels: Tensor, strategy: "SupervisedTemplate"
+        self,
+        images: Tensor,
+        labels: Tensor,
+        tasks: Tensor,
+        strategy: "SupervisedTemplate",
     ) -> Tensor:
         # images = preprocess_input(images)
         inputs = images.to(strategy.device).requires_grad_(True)
         targets = labels.to(strategy.device).long()
-        outputs = strategy.model(inputs)
 
         computed_maps = compute_saliency_map(
-            outputs=outputs,
+            pure_function=compute_score,
+            model=strategy.model,
             inputs=inputs,
+            tasks=tasks,
             targets=targets,
-            num_classes=1000,  # TODO: num_classes CANNOT be hardcoded!
-            create_graph=False,
         )
         return computed_maps.detach()
 
