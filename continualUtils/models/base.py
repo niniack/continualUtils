@@ -4,7 +4,7 @@ from typing import Optional
 
 import torch
 import torch.backends.cudnn
-from avalanche.models import MultiHeadClassifier, MultiTaskModule
+from avalanche.models import DynamicModule, MultiHeadClassifier, MultiTaskModule
 from functorch.experimental import replace_all_batch_norm_modules_
 from torch import nn
 
@@ -13,7 +13,7 @@ class MissingTasksException(Exception):
     pass
 
 
-class BaseModel(ABC, MultiTaskModule):
+class BaseModel(ABC, MultiTaskModule, DynamicModule):
     """Base model to inherit for continualTrain"""
 
     def __init__(
@@ -53,8 +53,10 @@ class BaseModel(ABC, MultiTaskModule):
         if self.is_multihead:
             self.multihead_classifier = MultiHeadClassifier(
                 in_features=in_features,
-                initial_out_features=num_classes_per_head,
-            ).to(device)
+                initial_out_features=self.num_classes_per_head,
+                masking=False,
+            )
+            self.multihead_classifier.to(device)
 
         # Initialize weights with Kaiming init
         if self.init_weights:

@@ -72,7 +72,7 @@ class OneHotException(Exception):
 
 def compute_score(
     x: torch.Tensor,
-    task: torch.Tensor,
+    task: int,
     y: torch.Tensor,
     model: torch.nn.Module,
 ) -> torch.Tensor:
@@ -85,8 +85,9 @@ def compute_score(
     x = x.unsqueeze(0)
     y = y.unsqueeze(0)
 
-    # Forward pass with cloned input
-    output = model(x, int(task[0]))
+    # Forward pass
+    # task is an int
+    output = model(x, task)
 
     if output.shape != y.shape:
         raise OneHotException(

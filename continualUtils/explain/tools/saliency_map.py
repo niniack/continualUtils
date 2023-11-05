@@ -49,12 +49,15 @@ def compute_saliency_map(
     # Set up vmap operator for entire batch
     # All arguments must be batched (see in_dims)
     compute_batch_saliency = vmap(
-        compute_single_saliency, in_dims=(0, 0, 0, None)
+        compute_single_saliency, in_dims=(0, None, 0, None)
     )
+
+    # each minibatch should have the same task, so this shouldn't be an issue
+    task = int(tasks[0])
 
     # Execute the transformed function
     # vmap will automatically unbatch the arguments
-    per_sample_grad = compute_batch_saliency(inputs, tasks, targets, model)
+    per_sample_grad = compute_batch_saliency(inputs, task, targets, model)
 
     # Reduce the channels to get single channel heatmap
     per_sample_map = torch.mean(per_sample_grad, dim=1, keepdim=True)
