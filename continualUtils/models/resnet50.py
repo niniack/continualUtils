@@ -44,7 +44,7 @@ class CustomResNet50(BaseModel):
             model=_model,
             output_hidden=output_hidden,
             is_multihead=multihead,
-            in_features=512,
+            in_features=2048,
             num_classes_total=num_classes_total,
             num_classes_per_head=num_classes_per_head,
             init_weights=True,

@@ -147,7 +147,7 @@ class CustomResNet18(BaseModel):
             model=_model,
             output_hidden=output_hidden,
             is_multihead=multihead,
-            in_features=512,
+            in_features=256,
             num_classes_total=num_classes_total,
             num_classes_per_head=num_classes_per_head,
             init_weights=True,
