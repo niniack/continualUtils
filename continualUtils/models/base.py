@@ -47,10 +47,10 @@ class BaseModel(ABC, MultiTaskModule):
             torch.backends.cudnn.deterministic = True
             torch.backends.cudnn.benchmark = False
 
+        if self.num_classes_per_head is None:
+            self.num_classes_per_head = self.num_classes_total
         # Set classifier style
         if self.is_multihead:
-            if num_classes_per_head is None:
-                num_classes_per_head = num_classes_total
             self.multihead_classifier = MultiHeadClassifier(
                 in_features=in_features,
                 initial_out_features=num_classes_per_head,
