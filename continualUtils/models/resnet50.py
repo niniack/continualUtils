@@ -41,7 +41,7 @@ class CustomResNet50(BaseModel):
         super().__init__(
             seed=seed,
             device=device,
-            model = self._model
+            model=self._model,
             output_hidden=output_hidden,
             is_multihead=multihead,
             in_features=512,
