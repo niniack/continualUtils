@@ -19,13 +19,13 @@ class BaseModel(ABC, MultiTaskModule):
     def __init__(
         self,
         seed: int,
+        device: torch.device,
         output_hidden: bool,
         is_multihead: bool,
         in_features: int,
         num_classes_total: int,
-        device: torch.device,
         num_classes_per_head: Optional[int] = None,
-        init_weights: bool = True,
+        init_weights: bool = False,
     ):
         super().__init__()
         self.seed = seed
@@ -139,9 +139,9 @@ class BaseModel(ABC, MultiTaskModule):
         pass
 
     @abstractmethod
-    def forward(self, *args, **kwargs):
+    def forward(self, x, task_labels):
         pass
 
     @abstractmethod
-    def get_hidden_layer(self):
+    def get_hidden_layer(self, *args, **kwargs):
         pass

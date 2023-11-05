@@ -1,6 +1,5 @@
 import os
 from functools import reduce
-from pathlib import Path
 from typing import Optional
 
 import torch
@@ -12,26 +11,25 @@ from continualUtils.models import BaseModel, MissingTasksException
 
 
 class PretrainedResNet18(BaseModel):
+    """Pretrained ResNet18 on Imagenet"""
+
     def __init__(
         self,
         device: torch.device,
         num_classes_per_head: Optional[int] = None,
-        seed=42,
-        output_hidden=False,
-        multihead=False,
+        output_hidden: bool = False,
+        multihead: bool = False,
+        seed: int = 42,
     ):
-        """
-        Returns:
-            Pretrained ResNet18 from Microsoft
-        """
         super().__init__(
             seed=seed,
+            device=device,
             output_hidden=output_hidden,
             is_multihead=multihead,
-            device=device,
             in_features=512,
-            num_classes_per_head=num_classes_per_head,
             num_classes_total=1000,
+            num_classes_per_head=num_classes_per_head,
+            init_weights=False,
         )
 
         self._model = ResNetForImageClassification.from_pretrained(
@@ -74,7 +72,7 @@ class PretrainedResNet18(BaseModel):
         self._model = self.model.to(self.device)
 
     def get_hidden_layer(self, id):
-        raise NotImplementedError("ToDo!")
+        raise NotImplementedError("To Do!")
 
     def forward(self, x, task_labels=None):
         if self.is_multihead:
@@ -114,7 +112,13 @@ class CustomResNet18(BaseModel):
     """
 
     def __init__(
-        self, num_classes, device, seed=42, output_hidden=False, multihead=False
+        self,
+        device: torch.device,
+        num_classes_total: int,
+        num_classes_per_head: Optional[int] = None,
+        output_hidden: bool = False,
+        multihead: bool = False,
+        seed: int = 42,
     ):
         """
         Returns:
@@ -122,11 +126,13 @@ class CustomResNet18(BaseModel):
         """
         super().__init__(
             seed=seed,
+            device=device,
             output_hidden=output_hidden,
             is_multihead=multihead,
-            device=device,
-            in_features=256,
-            out_features=num_classes,
+            in_features=512,
+            num_classes_total=num_classes_total,
+            num_classes_per_head=num_classes_per_head,
+            init_weights=True,
         )
 
         # Initializing a model (with random weights) from
@@ -139,7 +145,6 @@ class CustomResNet18(BaseModel):
             layer_type="basic",
             hidden_act="relu",
             downsample_in_first_stage=True,
-            num_labels=num_classes,
         )
 
         self._model = ResNetForImageClassification(configuration).to(device)

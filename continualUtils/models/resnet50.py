@@ -1,6 +1,6 @@
 import os
 from functools import reduce
-from typing import List, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import torch
 from torch import Tensor
@@ -12,12 +12,12 @@ from continualUtils.models import BaseModel, MissingTasksException
 class CustomResNet50(BaseModel):
     def __init__(
         self,
-        num_classes: int,
         device: torch.device,
-        seed: int = 42,
+        num_classes_total: int,
+        num_classes_per_head: Optional[int] = None,
         output_hidden: bool = False,
         multihead: bool = False,
-        init_weights: bool = True,
+        seed: int = 42,
     ):
         """
         Returns:
@@ -25,12 +25,13 @@ class CustomResNet50(BaseModel):
         """
         super().__init__(
             seed=seed,
+            device=device,
             output_hidden=output_hidden,
             is_multihead=multihead,
-            device=device,
-            in_features=2048,
-            out_features=num_classes,
-            init_weights=init_weights,
+            in_features=512,
+            num_classes_total=num_classes_total,
+            num_classes_per_head=num_classes_per_head,
+            init_weights=True,
         )
 
         # Initializing a model (with random weights) from
@@ -43,7 +44,6 @@ class CustomResNet50(BaseModel):
             layer_type="bottleneck",
             hidden_act="relu",
             downsample_in_first_stage=False,
-            num_labels=num_classes,
         )
 
         self._model = ResNetForImageClassification(configuration).to(device)  # type: ignore
@@ -129,7 +129,7 @@ class CustomResNet50(BaseModel):
         else:
             return classifier_out
 
-    def get_hidden_layer(self, id):
-        name = self.hidden_layers[id]
+    def get_hidden_layer(self, idx):
+        name = self.hidden_layers[idx]
         layers = name.split(".")
         return reduce(getattr, layers, self.model)
