@@ -9,7 +9,3 @@ __pycache__/
 event.json
 *.dot
 *.png
-*
-!.*.*
-!*/
-!*.ipynb
