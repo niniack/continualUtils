@@ -1,3 +1,4 @@
+import os
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Optional
@@ -155,3 +156,60 @@ class BaseModel(ABC, MultiTaskModule, DynamicModule):
     @abstractmethod
     def get_hidden_layer(self, *args, **kwargs):
         pass
+
+
+class HuggingFaceResNet(BaseModel):
+    def _save_weights_impl(self, dir_name):
+        # Check if the model has a 'save_pretrained' method
+        if hasattr(self._model, "save_pretrained"):
+            # Create the directory if it doesn't exist
+            if not os.path.exists(dir_name):
+                os.makedirs(dir_name)
+
+            # Save the model
+            self._model.save_pretrained(dir_name)
+            print(f"Model saved in directory: {dir_name}")
+        else:
+            print(
+                "The provided model does not have a 'save_pretrained' method."
+            )
+
+    def _load_weights_impl(self, dir_name):
+        print(f"Loading from {dir_name}")
+        # Load model
+        self._model = self._model.from_pretrained(dir_name)
+        self._model = self._model.to(self.device)
+
+    def get_hidden_layer(self, id):
+        raise NotImplementedError("To Do!")
+
+    def forward(self, x, task_labels=None):
+        if self.is_multihead:
+            if task_labels is None:
+                raise MissingTasksException(
+                    "Task labels must be provided for multihead classifiers"
+                )
+
+            out = self._model.resnet(
+                x, output_hidden_states=self.output_hidden, return_dict=True
+            )
+
+            # Reshape pooler output
+            flat_pooler_out = out.pooler_output.view(
+                out.pooler_output.size(0), -1
+            )
+
+            # Feed to multihead classifier
+            classifier_out = self.multihead_classifier(
+                flat_pooler_out, task_labels
+            )
+        else:
+            out = self._model(
+                x, output_hidden_states=self.output_hidden, return_dict=True
+            )
+            classifier_out = out.logits
+
+        if self.output_hidden:
+            return classifier_out, out.hidden_states
+        else:
+            return classifier_out
