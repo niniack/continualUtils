@@ -1,6 +1,16 @@
-from typing import Any, Optional, Sequence, Union
+from typing import Any, Dict, Iterable, Optional, Sequence, Tuple, Union
 
 from avalanche.benchmarks import CLScenario, NCScenario, nc_benchmark
+from avalanche.benchmarks.generators.benchmark_generators import (
+    TCLDataset,
+    _make_plain_experience,
+)
+from avalanche.benchmarks.scenarios.dataset_scenario import (
+    DatasetScenario,
+    FactoryBasedStream,
+    StreamDef,
+    StreamUserDef,
+)
 
 from continualUtils.benchmarks.datasets.clickme import ClickMeDataset
 
@@ -85,7 +95,7 @@ def SplitClickMe(  # pylint: disable=C0103
         clickme_val = ClickMeDataset(root=root, split="val")
 
         # Make a benchmark with train stream
-        benchmark_with_train_stream = nc_benchmark(
+        benchmark_with_train = nc_benchmark(
             train_dataset=clickme_train,  # type: ignore
             test_dataset=clickme_test,  # type: ignore
             n_experiences=n_experiences,
@@ -100,7 +110,7 @@ def SplitClickMe(  # pylint: disable=C0103
         )
 
         # Make a benchmark with val stream
-        benchmark_with_val_stream = nc_benchmark(
+        benchmark_with_val = nc_benchmark(
             train_dataset=clickme_val,  # type: ignore
             test_dataset=clickme_test,  # type: ignore
             n_experiences=n_experiences,
@@ -116,15 +126,63 @@ def SplitClickMe(  # pylint: disable=C0103
 
         # Frankenstein the two benchmarks
         # We grab the two train streams and one of the two test streams
-        train_stream = benchmark_with_train_stream.train_stream
-        test_stream = benchmark_with_train_stream.test_stream
+        # The naming below might be confusing, so read carefully
+        # I will write "note" near places where it might be confusing
+        val_stream = benchmark_with_val.train_stream
 
         # We need to do a bit of surgery here
-        val_stream = benchmark_with_val_stream.train_stream
-        val_stream.name = "val"
+        # cannot just val_stream.name = "val" and call it a day :/
+        # Most of this is adapted from the avalanche 0.4.0 implementation of
+        # `benchmark_with_validation_stream`, later versions use new implementation
 
-        full_benchmark = CLScenario(
-            streams=[train_stream, val_stream, test_stream]
+        # Get stream definitions from benchmark with train
+        # and create new one based on that
+        benchmark_with_train_stream_definitions: Dict[
+            str, StreamDef[TCLDataset]  # type: ignore
+        ] = benchmark_with_train.stream_definitions
+
+        new_stream_definitions: Dict[
+            str, Union[StreamUserDef[TCLDataset], StreamDef[TCLDataset]]  # type: ignore
+        ] = dict(benchmark_with_train_stream_definitions)
+
+        # Get stream definitions from benchmark with val
+        # and use it to grab task_labels
+        benchmark_with_val_stream_definitions: Dict[
+            str, StreamDef[TCLDataset]  # type: ignore
+        ] = benchmark_with_val.stream_definitions
+
+        val_exps_tasks_labels = list(
+            benchmark_with_val_stream_definitions[
+                "train"  # note
+            ].exps_task_labels
         )
 
-        return full_benchmark
+        # Get val experiences
+        valid_exps_source: Union[
+            Iterable[TCLDataset], Tuple[Iterable[TCLDataset], int]  # type: ignore
+        ] = []
+        for val_exp in val_stream:
+            valid_exps_source.append(val_exp.dataset)
+
+        # Make new stream definition for val stream
+        val_stream_def: StreamUserDef[TCLDataset] = StreamUserDef(  # type: ignore
+            valid_exps_source,
+            val_exps_tasks_labels,
+            benchmark_with_val_stream_definitions[
+                "train"  # note
+            ].origin_dataset,
+            False,
+        )
+
+        # Add the new val stream def
+        new_stream_definitions["val"] = val_stream_def
+
+        # Grab setting
+        complete_test_set_only = benchmark_with_train.complete_test_set_only
+
+        return DatasetScenario(
+            stream_definitions=new_stream_definitions,
+            complete_test_set_only=complete_test_set_only,
+            stream_factory=FactoryBasedStream,
+            experience_factory=_make_plain_experience,
+        )
