@@ -32,7 +32,7 @@ def SplitClickMe(  # pylint: disable=C0103
     train_transform: Optional[Any] = None,
     eval_transform: Optional[Any] = None,
     dummy: bool = False,
-) -> Union[NCScenario, CLScenario]:
+) -> Union[NCScenario, DatasetScenario]:
     """Returns a split version of the ClickMe dataset
 
     :param n_experiences: The number of incremental experience. This is not used
@@ -189,6 +189,6 @@ def SplitClickMe(  # pylint: disable=C0103
         return DatasetScenario(
             stream_definitions=new_stream_definitions,
             complete_test_set_only=complete_test_set_only,
-            stream_factory=NCStream,
-            experience_factory=NCExperience,
+            stream_factory=FactoryBasedStream,
+            experience_factory=_make_plain_experience,
         )

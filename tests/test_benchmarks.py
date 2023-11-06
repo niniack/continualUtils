@@ -41,3 +41,6 @@ def test_load_splitme():
     assert split_clickme.train_stream is not None
     assert split_clickme.test_stream is not None
     assert split_clickme.val_stream is not None
+
+    val_exp = next(iter(split_clickme.val_stream), None)
+    assert val_exp is not None
