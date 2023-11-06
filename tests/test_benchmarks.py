@@ -32,7 +32,7 @@ def test_normalize_np_image():
     assert_close(normalized_img, expected_img, rtol=1e-03, atol=1e-03)
 
 
-def test_load_splitme():
+def test_load_splitme(logger):
     """Test loading the SplitClickMe benchmark"""
     split_clickme = SplitClickMe(
         n_experiences=10, root="/mnt/datasets/clickme", seed=42
@@ -44,3 +44,6 @@ def test_load_splitme():
 
     val_exp = next(iter(split_clickme.val_stream), None)
     assert val_exp is not None
+
+    assert hasattr(val_exp, "classes_in_this_experience")
+    logger.debug(val_exp.classes_in_this_experience)

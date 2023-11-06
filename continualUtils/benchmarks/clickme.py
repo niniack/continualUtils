@@ -11,7 +11,8 @@ from avalanche.benchmarks.generators.benchmark_generators import (
     TCLDataset,
     _make_plain_experience,
 )
-from avalanche.benchmarks.scenarios.dataset_scenario import (
+from avalanche.benchmarks.scenarios import (
+    ClassificationScenario,
     DatasetScenario,
     FactoryBasedStream,
     StreamDef,
@@ -186,9 +187,9 @@ def SplitClickMe(  # pylint: disable=C0103
         # Grab setting
         complete_test_set_only = benchmark_with_train.complete_test_set_only
 
-        return DatasetScenario(
+        return ClassificationScenario(
             stream_definitions=new_stream_definitions,
             complete_test_set_only=complete_test_set_only,
-            stream_factory=FactoryBasedStream,
-            experience_factory=_make_plain_experience,
+            stream_factory=NCStream,
+            experience_factory=NCExperience,
         )
