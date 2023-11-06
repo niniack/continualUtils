@@ -37,4 +37,7 @@ def test_load_splitme():
     split_clickme = SplitClickMe(
         n_experiences=10, root="/mnt/datasets/clickme", seed=42
     )
-    assert isinstance(split_clickme, NCScenario)
+
+    assert split_clickme.train_stream is not None
+    assert split_clickme.test_stream is not None
+    assert split_clickme.val_stream is not None

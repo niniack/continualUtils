@@ -1,6 +1,6 @@
-from typing import Any, Optional, Sequence
+from typing import Any, Optional, Sequence, Union
 
-from avalanche.benchmarks import NCScenario, nc_benchmark
+from avalanche.benchmarks import CLScenario, NCScenario, nc_benchmark
 
 from continualUtils.benchmarks.datasets.clickme import ClickMeDataset
 
@@ -16,7 +16,7 @@ def SplitClickMe(  # pylint: disable=C0103
     train_transform: Optional[Any] = None,
     eval_transform: Optional[Any] = None,
     dummy: bool = False,
-) -> NCScenario:
+) -> Union[NCScenario, CLScenario]:
     """Returns a split version of the ClickMe dataset
 
     :param n_experiences: The number of incremental experience. This is not used
@@ -58,26 +58,73 @@ def SplitClickMe(  # pylint: disable=C0103
     :return: A properly initialized :class:`NCScenario` instance.
     """
 
+    # Make test dataset
+    clickme_test = ClickMeDataset(root=root, split="test")
+
     # DEBUG for faster loading of the dataset
-    # TODO fix naming, don't use dummy dirs
     if dummy:
-        clickme_train = ClickMeDataset(root=root, split="val")
-        clickme_test = ClickMeDataset(root=root, split="test")
-    # TODO fix naming, don't use val, use train!
+        clickme_val = ClickMeDataset(root=root, split="val")
+
+        return nc_benchmark(
+            train_dataset=clickme_val,  # type: ignore
+            test_dataset=clickme_test,  # type: ignore
+            n_experiences=n_experiences,
+            task_labels=return_task_id,
+            seed=seed,
+            fixed_class_order=fixed_class_order,
+            shuffle=shuffle,
+            per_exp_classes=None,
+            class_ids_from_zero_in_each_exp=class_ids_from_zero_in_each_exp,
+            train_transform=train_transform,
+            eval_transform=eval_transform,
+        )
+
+    # Actual benchmark
     else:
         clickme_train = ClickMeDataset(root=root, split="train")
-        clickme_test = ClickMeDataset(root=root, split="test")
+        clickme_val = ClickMeDataset(root=root, split="val")
 
-    return nc_benchmark(
-        train_dataset=clickme_train,  # type: ignore
-        test_dataset=clickme_test,  # type: ignore
-        n_experiences=n_experiences,
-        task_labels=return_task_id,
-        seed=seed,
-        fixed_class_order=fixed_class_order,
-        shuffle=shuffle,
-        per_exp_classes=None,
-        class_ids_from_zero_in_each_exp=class_ids_from_zero_in_each_exp,
-        train_transform=train_transform,
-        eval_transform=eval_transform,
-    )
+        # Make a benchmark with train stream
+        benchmark_with_train_stream = nc_benchmark(
+            train_dataset=clickme_train,  # type: ignore
+            test_dataset=clickme_test,  # type: ignore
+            n_experiences=n_experiences,
+            task_labels=return_task_id,
+            seed=seed,
+            fixed_class_order=fixed_class_order,
+            shuffle=shuffle,
+            per_exp_classes=None,
+            class_ids_from_zero_in_each_exp=class_ids_from_zero_in_each_exp,
+            train_transform=train_transform,
+            eval_transform=eval_transform,
+        )
+
+        # Make a benchmark with val stream
+        benchmark_with_val_stream = nc_benchmark(
+            train_dataset=clickme_val,  # type: ignore
+            test_dataset=clickme_test,  # type: ignore
+            n_experiences=n_experiences,
+            task_labels=return_task_id,
+            seed=seed,
+            fixed_class_order=fixed_class_order,
+            shuffle=shuffle,
+            per_exp_classes=None,
+            class_ids_from_zero_in_each_exp=class_ids_from_zero_in_each_exp,
+            train_transform=train_transform,
+            eval_transform=eval_transform,
+        )
+
+        # Frankenstein the two benchmarks
+        # We grab the two train streams and one of the two test streams
+        train_stream = benchmark_with_train_stream.train_stream
+        test_stream = benchmark_with_train_stream.test_stream
+
+        # We need to do a bit of surgery here
+        val_stream = benchmark_with_val_stream.train_stream
+        val_stream.name = "val"
+
+        full_benchmark = CLScenario(
+            streams=[train_stream, val_stream, test_stream]
+        )
+
+        return full_benchmark
