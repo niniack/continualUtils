@@ -1,6 +1,12 @@
 from typing import Any, Dict, Iterable, Optional, Sequence, Tuple, Union
 
-from avalanche.benchmarks import CLScenario, NCScenario, nc_benchmark
+from avalanche.benchmarks import (
+    CLScenario,
+    NCExperience,
+    NCScenario,
+    NCStream,
+    nc_benchmark,
+)
 from avalanche.benchmarks.generators.benchmark_generators import (
     TCLDataset,
     _make_plain_experience,
@@ -183,6 +189,6 @@ def SplitClickMe(  # pylint: disable=C0103
         return DatasetScenario(
             stream_definitions=new_stream_definitions,
             complete_test_set_only=complete_test_set_only,
-            stream_factory=FactoryBasedStream,
-            experience_factory=_make_plain_experience,
+            stream_factory=NCStream,
+            experience_factory=NCExperience,
         )
