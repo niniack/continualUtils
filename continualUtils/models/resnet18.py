@@ -1,16 +1,12 @@
-import os
-from functools import reduce
 from typing import Optional
 
 import torch
-from avalanche.models import MultiHeadClassifier, MultiTaskModule
-from torch import nn
-from transformers import ResNetConfig, ResNetForImageClassification, ResNetModel
+from transformers import ResNetConfig, ResNetForImageClassification
 
-from continualUtils.models import BaseModel, MissingTasksException
+from continualUtils.models import HuggingFaceResNet
 
 
-class PretrainedResNet18(BaseModel):
+class PretrainedResNet18(HuggingFaceResNet):
     """Pretrained ResNet18 on Imagenet"""
 
     def __init__(
@@ -52,63 +48,8 @@ class PretrainedResNet18(BaseModel):
     def num_hidden(self):
         return self._num_hidden
 
-    def _save_weights_impl(self, dir_name):
-        # Check if the model has a 'save_pretrained' method
-        if hasattr(self.model, "save_pretrained"):
-            # Create the directory if it doesn't exist
-            if not os.path.exists(dir_name):
-                os.makedirs(dir_name)
 
-            # Save the model
-            self.model.save_pretrained(dir_name)
-            print(f"Model saved in directory: {dir_name}")
-        else:
-            print(
-                "The provided model does not have a 'save_pretrained' method."
-            )
-
-    def _load_weights_impl(self, dir_name):
-        print(f"Loading from {dir_name}")
-        # Load model
-        self._model = self.model.from_pretrained(dir_name)
-        self._model = self.model.to(self.device)
-
-    def get_hidden_layer(self, id):
-        raise NotImplementedError("To Do!")
-
-    def forward(self, x, task_labels=None):
-        if self.is_multihead:
-            if task_labels is None:
-                raise MissingTasksException(
-                    "Task labels must be provided for multihead classifiers"
-                )
-
-            out = self.model.resnet(
-                x, output_hidden_states=self.output_hidden, return_dict=True
-            )
-
-            # Reshape pooler output
-            flat_pooler_out = out.pooler_output.view(
-                out.pooler_output.size(0), -1
-            )
-
-            # Feed to multihead classifier
-            classifier_out = self.multihead_classifier(
-                flat_pooler_out, task_labels
-            )
-        else:
-            out = self.model(
-                x, output_hidden_states=self.output_hidden, return_dict=True
-            )
-            classifier_out = out.logits
-
-        if self.output_hidden:
-            return classifier_out, out.hidden_states
-        else:
-            return classifier_out
-
-
-class CustomResNet18(BaseModel):
+class CustomResNet18(HuggingFaceResNet):
     """Build a Resnet 18 model as
     described in https://arxiv.org/pdf/2007.07400.pdf
     """
@@ -174,60 +115,3 @@ class CustomResNet18(BaseModel):
     @property
     def num_hidden(self):
         return self._num_hidden
-
-    def _save_weights_impl(self, dir_name):
-        # Check if the model has a 'save_pretrained' method
-        if hasattr(self.model, "save_pretrained"):
-            # Create the directory if it doesn't exist
-            if not os.path.exists(dir_name):
-                os.makedirs(dir_name)
-
-            # Save the model
-            self.model.save_pretrained(dir_name)
-            print(f"Model saved in directory: {dir_name}")
-        else:
-            print(
-                "The provided model does not have a 'save_pretrained' method."
-            )
-
-    def _load_weights_impl(self, dir_name):
-        print(f"Loading from {dir_name}")
-        # Load model
-        self._model = self.model.from_pretrained(dir_name)
-        self._model = self.model.to(self.device)
-
-    def forward(self, x, task_labels=None):
-        if self.is_multihead:
-            if task_labels is None:
-                raise MissingTasksException(
-                    "Task labels must be provided for multihead classifiers"
-                )
-
-            out = self.model.resnet(
-                x, output_hidden_states=self.output_hidden, return_dict=True
-            )
-
-            # Reshape pooler output
-            flat_pooler_out = out.pooler_output.view(
-                out.pooler_output.size(0), -1
-            )
-
-            # Feed to multihead classifier
-            classifier_out = self.multihead_classifier(
-                flat_pooler_out, task_labels
-            )
-        else:
-            out = self.model(
-                x, output_hidden_states=self.output_hidden, return_dict=True
-            )
-            classifier_out = out.logits
-
-        if self.output_hidden:
-            return classifier_out, out.hidden_states
-        else:
-            return classifier_out
-
-    def get_hidden_layer(self, id):
-        name = self.hidden_layers[id]
-        layers = name.split(".")
-        return reduce(getattr, layers, self.model)
