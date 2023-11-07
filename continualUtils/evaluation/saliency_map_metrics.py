@@ -223,9 +223,13 @@ class SaliencyMapSamplePlugin(PluginMetric):
     ) -> Tensor:
         # images = preprocess_input(images)
         inputs = images.to(strategy.device).requires_grad_(True)
-        targets = F.one_hot(labels, strategy.model.num_classes_per_head).to(
-            strategy.device
-        )
+
+        if labels.shape[-1] is not strategy.model.num_classes_per_head:
+            targets = F.one_hot(labels, strategy.model.num_classes_per_head).to(
+                strategy.device
+            )
+        else:
+            targets = labels.to(strategy.device)
 
         computed_maps = compute_saliency_map(
             pure_function=compute_score,
