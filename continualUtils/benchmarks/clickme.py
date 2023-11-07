@@ -1,25 +1,20 @@
 from typing import Any, Dict, Iterable, Optional, Sequence, Tuple, Union
 
 from avalanche.benchmarks import (
-    CLScenario,
     NCExperience,
     NCScenario,
     NCStream,
     nc_benchmark,
 )
-from avalanche.benchmarks.generators.benchmark_generators import (
-    TCLDataset,
-    _make_plain_experience,
-)
+from avalanche.benchmarks.generators.benchmark_generators import TCLDataset
 from avalanche.benchmarks.scenarios import (
     ClassificationScenario,
     DatasetScenario,
-    FactoryBasedStream,
     StreamDef,
     StreamUserDef,
 )
 
-from continualUtils.benchmarks.datasets.clickme import ClickMeDataset
+from continualUtils.benchmarks.datasets.clickme import make_clickme_dataset
 
 
 def SplitClickMe(  # pylint: disable=C0103
@@ -76,11 +71,11 @@ def SplitClickMe(  # pylint: disable=C0103
     """
 
     # Make test dataset
-    clickme_test = ClickMeDataset(root=root, split="test")
+    clickme_test = make_clickme_dataset(root=root, split="test")
 
     # DEBUG for faster loading of the dataset
     if dummy:
-        clickme_val = ClickMeDataset(root=root, split="val")
+        clickme_val = make_clickme_dataset(root=root, split="val")
 
         return nc_benchmark(
             train_dataset=clickme_val,  # type: ignore
@@ -98,8 +93,8 @@ def SplitClickMe(  # pylint: disable=C0103
 
     # Actual benchmark
     else:
-        clickme_train = ClickMeDataset(root=root, split="train")
-        clickme_val = ClickMeDataset(root=root, split="val")
+        clickme_train = make_clickme_dataset(root=root, split="train")
+        clickme_val = make_clickme_dataset(root=root, split="val")
 
         # Make a benchmark with train stream
         benchmark_with_train = nc_benchmark(
@@ -182,7 +177,7 @@ def SplitClickMe(  # pylint: disable=C0103
         )
 
         # Add the new val stream def
-        new_stream_definitions["val"] = val_stream_def
+        new_stream_definitions["val"] = val_stream_def  # type: ignore
 
         # Grab setting
         complete_test_set_only = benchmark_with_train.complete_test_set_only
@@ -190,6 +185,6 @@ def SplitClickMe(  # pylint: disable=C0103
         return ClassificationScenario(
             stream_definitions=new_stream_definitions,
             complete_test_set_only=complete_test_set_only,
-            stream_factory=NCStream,
+            stream_factory=NCStream,  # type: ignore
             experience_factory=NCExperience,
         )

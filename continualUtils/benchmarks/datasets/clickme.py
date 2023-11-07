@@ -2,14 +2,13 @@
 Dataset access code adapted from the Harmonization project:
 https://github.com/serre-lab/Harmonization/blob/main/harmonization/common/clickme_dataset.py
 """
-
 import json
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Any, Callable, Literal, Optional
 
 import numpy as np
 import torch
-from torch.utils.data import Dataset
+from avalanche.benchmarks.utils import make_classification_dataset
 from torchvision.transforms.functional import gaussian_blur, resize
 
 from continualUtils.benchmarks.datasets.preprocess import preprocess_input
@@ -26,6 +25,12 @@ LOCAL_PATH = "~/datasets/clickme/"
 
 HEATMAP_INDEX = 2
 TOKEN_INDEX = 3
+
+
+def make_clickme_dataset(root: str, split: Literal["train", "val", "test"]):
+    """Returns ClickMe as an Avalanche Dataset"""
+    dataset = ClickMeDataset(root=root, split=split)
+    return make_classification_dataset(dataset)
 
 
 class ClickMeDataset(Dataset):
@@ -68,29 +73,29 @@ class ClickMeDataset(Dataset):
 
         return len(self.targets)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, index):
         """
         Returns a batch of images, labels, and heatmaps as Torch tensors
         Note: due to how Avalanche processes the batch, we must preserve the images, labels, and heatmaps order.
         """
-        data = np.load(str(self.files[idx]))
+        data = np.load(str(self.files[index]))
         np_img = data["image"]
         np_heatmap = data["heatmap"]
         np_label = data["label"]
 
         np_img = preprocess_input(np_img)
         image = torch.from_numpy(np.transpose(np_img, (2, 0, 1))).float()
-        image = resize(image, size=224, antialias=False)
+        image = resize(image, size=224, antialias=False)  # type: ignore
 
         # Process heatmap
         heatmap = torch.from_numpy(np_heatmap).float()
-        heatmap = resize(heatmap.unsqueeze(0), size=64, antialias=False)
-        heatmap = gaussian_blur(heatmap, kernel_size=(9, 9), sigma=(9, 9))
+        heatmap = resize(heatmap.unsqueeze(0), size=64, antialias=False)  # type: ignore
+        heatmap = gaussian_blur(heatmap, kernel_size=(9, 9), sigma=(9, 9))  # type: ignore
 
-        heatmap = resize(heatmap, size=224, antialias=False)
+        heatmap = resize(heatmap, size=224, antialias=False)  # type: ignore
 
         label = np_label
-        token = self.tokens[idx]
+        token = self.tokens[index]
 
         if self.transform is not None:
             image = self.transform(image)
