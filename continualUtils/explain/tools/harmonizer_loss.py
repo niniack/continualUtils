@@ -60,7 +60,7 @@ class NeuralHarmonizerLoss(RegularizationMethod):
             output_maps_standardized, ground_maps_standardized, mb_tokens
         )
 
-        return pyramidal_loss
+        return pyramidal_loss * self.weight
 
     def update(self, *args, **kwargs):
         pass
