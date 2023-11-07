@@ -9,6 +9,7 @@ from typing import Any, Callable, Literal, Optional
 import numpy as np
 import torch
 from avalanche.benchmarks.utils import make_classification_dataset
+from torch.utils.data import Dataset
 from torchvision.transforms.functional import gaussian_blur, resize
 
 from continualUtils.benchmarks.datasets.preprocess import preprocess_input
