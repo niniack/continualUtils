@@ -5,6 +5,7 @@ from avalanche.training.regularization import RegularizationMethod
 from continualUtils.explain.tools import (
     compute_pyramidal_mse,
     compute_saliency_map,
+    compute_score,
     standardize_cut,
 )
 
@@ -65,34 +66,3 @@ class NeuralHarmonizerLoss(RegularizationMethod):
 
     def update(self, *args, **kwargs):
         pass
-
-
-class OneHotException(Exception):
-    pass
-
-
-def compute_score(
-    x: torch.Tensor,
-    task: int,
-    y: torch.Tensor,
-    model: torch.nn.Module,
-) -> torch.Tensor:
-    """
-    Since vmap will unbatch and vectorize the computation, we
-    assume that all the inputs do not have a batch dimension.
-    """
-
-    # Batch
-    x = x.unsqueeze(0)
-    y = y.unsqueeze(0)
-
-    # Forward pass
-    # task is an int
-    output = model(x, task)
-
-    if output.shape != y.shape:
-        raise OneHotException(
-            "The model outputs must be the shape as the target."
-        )
-    score = torch.sum(output * y)
-    return score

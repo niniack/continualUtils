@@ -26,6 +26,7 @@ def compute_saliency_map(
     inputs: torch.Tensor,
     tasks: torch.Tensor,
     targets: torch.Tensor,
+    grad_enabled: bool = True,
 ) -> torch.Tensor:
     """
     Compute saliency map
@@ -49,7 +50,7 @@ def compute_saliency_map(
     # Set up vmap operator for entire batch
     # All arguments must be batched (see in_dims)
     compute_batch_saliency = vmap(
-        compute_single_saliency, in_dims=(0, None, 0, None)
+        compute_single_saliency, in_dims=(0, None, 0, None, None)
     )
 
     # each minibatch should have the same task, so this shouldn't be an issue
@@ -57,7 +58,9 @@ def compute_saliency_map(
 
     # Execute the transformed function
     # vmap will automatically unbatch the arguments
-    per_sample_grad = compute_batch_saliency(inputs, task, targets, model)
+    per_sample_grad = compute_batch_saliency(
+        inputs, task, targets, model, grad_enabled
+    )
 
     # Reduce the channels to get single channel heatmap
     per_sample_map = torch.mean(per_sample_grad, dim=1, keepdim=True)
@@ -66,6 +69,39 @@ def compute_saliency_map(
     per_sample_map = F.relu(per_sample_map)
 
     return per_sample_map
+
+
+class OneHotException(Exception):
+    pass
+
+
+def compute_score(
+    x: torch.Tensor,
+    task: int,
+    y: torch.Tensor,
+    model: torch.nn.Module,
+    grad_enabled: bool = True,
+) -> torch.Tensor:
+    """
+    Since vmap will unbatch and vectorize the computation, we
+    assume that all the inputs do not have a batch dimension.
+    """
+
+    with torch.set_grad_enabled(grad_enabled):
+        # Batch
+        x = x.unsqueeze(0)
+        y = y.unsqueeze(0)
+
+        # Forward pass
+        # task is an int
+        output = model(x, task)
+
+        if output.shape != y.shape:
+            raise OneHotException(
+                "The model outputs must be the shape as the target."
+            )
+        score = torch.sum(output * y)
+    return score
 
 
 ## Archive ##
