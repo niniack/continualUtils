@@ -4,61 +4,70 @@ from torch import Tensor
 from torch.utils.data import DataLoader
 
 from continualUtils.benchmarks.datasets.clickme import HEATMAP_INDEX
-from continualUtils.explain.tools import compute_saliency_map
-from continualUtils.explain.tools.harmonizer_loss import NeuralHarmonizerLoss
-from continualUtils.explain.tools.pyramidal import (
-    _pyramidal_representation,
+from continualUtils.explain.tools import (
     compute_pyramidal_mse,
+    compute_saliency_map,
+    compute_score,
     standardize_cut,
 )
+from continualUtils.explain.tools.harmonizer_loss import NeuralHarmonizerLoss
+from continualUtils.explain.tools.pyramidal import _pyramidal_representation
 
-# def test_harmonizer_loss_pretrained(
-#     pretrained_resnet18, split_clickme_benchmark
-# ):
-#     # Set up benchmark
-#     train_stream = split_clickme_benchmark.train_stream
-#     exp_set = train_stream[0].dataset
-#     (image, label, heatmap, token, task) = exp_set[0]
 
-#     # Define model
-#     model = pretrained_resnet18
+def test_harmonizer_loss_pretrained(
+    pretrained_resnet18, split_clickme_benchmark, logger
+):
+    # Set up benchmark
+    train_stream = split_clickme_benchmark.train_stream
+    exp_set = train_stream[0].dataset
+    (image, label, heatmap, token, task) = exp_set[0]
 
-#     label = torch.tensor(label).long()
-#     input_img = image.unsqueeze(0).requires_grad_(True)
-#     heatmap = heatmap.unsqueeze(0)
-#     token = token.unsqueeze(0)
-#     output = model(input_img)
+    # Define model
+    model = pretrained_resnet18
 
-#     sa_map = compute_saliency_map(output, input_img, label)
-#     sa_map_preprocess = standardize_cut(sa_map)
-#     heatmap_preprocess = standardize_cut(heatmap)
+    input_img = image.unsqueeze(0).requires_grad_(True)
+    heatmap = heatmap.unsqueeze(0)
+    token = token.unsqueeze(0)
+    tasks = torch.tensor([task])
+    labels = torch.tensor([label])
 
-#     # Get max
-#     eps = 1e-6
-#     with torch.no_grad():
-#         _sa_max = (
-#             torch.amax(sa_map_preprocess.detach(), dim=(2, 3), keepdim=True)
-#             + eps
-#         )
-#         _hm_max = torch.amax(heatmap_preprocess, dim=(2, 3), keepdim=True) + eps
+    sa_map = compute_saliency_map(
+        pure_function=compute_score,
+        model=model,
+        inputs=input_img,
+        tasks=tasks,
+        targets=F.one_hot(labels, num_classes=model.num_classes_per_head),
+    )
+    sa_map_preprocess = standardize_cut(sa_map)
+    heatmap_preprocess = standardize_cut(heatmap)
 
-#         # Normalize the true heatmaps according to the saliency maps
-#         heatmap_preprocess = heatmap_preprocess / _hm_max * _sa_max
+    # Get max
+    eps = 1e-6
+    with torch.no_grad():
+        _sa_max = (
+            torch.amax(sa_map_preprocess.detach(), dim=(2, 3), keepdim=True)
+            + eps
+        )
+        _hm_max = torch.amax(heatmap_preprocess, dim=(2, 3), keepdim=True) + eps
 
-#     manual_loss = compute_pyramidal_mse(
-#         sa_map_preprocess, heatmap_preprocess, token
-#     )
+        # Normalize the true heatmaps according to the saliency maps
+        heatmap_preprocess = heatmap_preprocess / _hm_max * _sa_max
 
-#     nh_loss = NeuralHarmonizerLoss(weight=1)
-#     func_loss = nh_loss(
-#         mb_x=input_img,
-#         mb_y=label,
-#         mb_heatmap=heatmap,
-#         model=model,
-#         mb_tokens=token,
-#     )  # type: ignore
+    manual_loss = compute_pyramidal_mse(
+        sa_map_preprocess, heatmap_preprocess, token
+    )
 
-#     assert torch.allclose(manual_loss, func_loss)
+    nh_loss = NeuralHarmonizerLoss(weight=1)
+    func_loss = nh_loss(
+        mb_x=input_img,
+        mb_y=labels,
+        mb_heatmap=heatmap,
+        model=model,
+        mb_tokens=token,
+        mb_tasks=tasks,
+    )  # type: ignore
+
+    assert torch.allclose(manual_loss, func_loss)
 
 
 def test_cut_ground_maps(split_clickme_benchmark):
