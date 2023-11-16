@@ -11,11 +11,58 @@ from continualUtils.explain.tools import (
     standardize_cut,
 )
 from continualUtils.explain.tools.harmonizer_loss import NeuralHarmonizerLoss
+from continualUtils.explain.tools.lwm_loss import LwMLoss
 from continualUtils.explain.tools.pyramidal import _pyramidal_representation
+from continualUtils.models import CustomResNet18, CustomResNet50
+
+
+def test_lwm_loss(split_clickme_benchmark, device, logger):
+    # Define model
+    old_model = CustomResNet18(
+        device=device,
+        num_classes_total=1000,
+        num_classes_per_head=50,  # conftest splitclickme is 20 exp
+        multihead=True,
+    )
+
+    new_model = CustomResNet50(
+        device=device,
+        num_classes_total=1000,
+        num_classes_per_head=50,  # conftest splitclickme is 20 exp
+        multihead=True,
+    )
+
+    # Set up benchmark
+    train_stream = split_clickme_benchmark.train_stream
+    exp = train_stream[0]
+    exp_set = exp.dataset
+    (image, label, heatmap, token, task) = exp_set[0]
+
+    input_img = image.unsqueeze(0).requires_grad_(True).to(device)
+    heatmap = heatmap.unsqueeze(0)
+    token = token.unsqueeze(0)
+    tasks = torch.tensor([task])
+    labels = torch.tensor([label])
+
+    # Adapt the models
+    old_model.adapt_model(exp)
+    new_model.adapt_model(exp)
+
+    # Get loss object
+    lwm_loss = LwMLoss(weight=1, prev_model=old_model)
+    func_loss_diff_models = lwm_loss(mb_x=input_img, curr_model=new_model)
+
+    lwm_loss = LwMLoss(weight=1, prev_model=new_model)
+    func_loss_same_models = lwm_loss(mb_x=input_img, curr_model=new_model)
+
+    logger.debug(func_loss_diff_models)
+    logger.debug(func_loss_same_models)
+
+    assert func_loss_diff_models > func_loss_same_models
 
 
 def test_harmonizer_loss_pretrained(
-    pretrained_resnet18, split_clickme_benchmark, logger
+    pretrained_resnet18, split_clickme_benchmark
 ):
     # Set up benchmark
     train_stream = split_clickme_benchmark.train_stream
