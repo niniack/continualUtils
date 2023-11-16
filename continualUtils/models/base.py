@@ -1,11 +1,14 @@
 import os
+import warnings
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional, Union
 
 import torch
 import torch.backends.cudnn
+from avalanche.benchmarks import NCExperience
 from avalanche.models import DynamicModule, MultiHeadClassifier, MultiTaskModule
+from avalanche.models.utils import avalanche_forward
 from functorch.experimental import replace_all_batch_norm_modules_
 from torch import nn
 
@@ -74,7 +77,7 @@ class BaseModel(ABC, MultiTaskModule, DynamicModule):
         for m in self.modules():
             if isinstance(m, (nn.Conv2d, nn.Linear)):
                 nn.init.kaiming_normal_(
-                    m.weight, mode="fan_out", nonlinearity="relu"
+                    m.weight, mode="fan_in", nonlinearity="relu"
                 )
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
@@ -89,8 +92,10 @@ class BaseModel(ABC, MultiTaskModule, DynamicModule):
         """
         self.output_hidden = output_hidden
 
-    def adapt_model(self, experiences):
+    def adapt_model(self, experiences: Union[List[NCExperience], NCExperience]):
         if self.is_multihead:
+            if isinstance(experiences, NCExperience):
+                experiences = [experiences]
             for exp in experiences:
                 self.multihead_classifier.adaptation(exp)
 
@@ -186,8 +191,8 @@ class HuggingFaceResNet(BaseModel):
     def forward(self, x, task_labels=None):
         if self.is_multihead:
             if task_labels is None:
-                raise MissingTasksException(
-                    "Task labels must be provided for multihead classifiers"
+                warnings.warn(
+                    "Task labels were not provided. Running forward on all tasks."
                 )
 
             out = self._model.resnet(

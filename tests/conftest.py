@@ -2,7 +2,7 @@ import logging
 
 import pytest
 import torch
-from avalanche.benchmarks.classic import PermutedMNIST
+from avalanche.benchmarks.classic import PermutedMNIST, SplitTinyImageNet
 from avalanche.models import SimpleMLP
 from datasets import load_dataset
 from PIL import Image
@@ -20,9 +20,26 @@ skip_if_no_cuda = pytest.mark.skipif(
 
 
 @pytest.fixture
+def device():
+    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+@pytest.fixture
 def pretrained_resnet18():
     model = PretrainedResNet18(device=torch.device("cpu"))
     return model
+
+
+@pytest.fixture
+def split_tiny_imagenet():
+    # 200 classes
+    split_tiny = SplitTinyImageNet(
+        n_experiences=20,
+        dataset_root="/mnt/datasets/tinyimagenet",
+        seed=42,
+        return_task_id=True,
+    )
+    return split_tiny
 
 
 @pytest.fixture
@@ -103,13 +120,10 @@ def av_simple_mlp():
     return model
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def logger():
-    # Set up logging format
-    format = "%(asctime)s [%(levelname)s] %(message)s"
-    logging.basicConfig(format=format, level=logging.DEBUG)
+    # Create a logger for 'pytest'
+    pytest_logger = logging.getLogger("pytest")
+    pytest_logger.setLevel(logging.DEBUG)
 
-    logger = logging.getLogger("pytest")
-    logger.debug("Logging setup complete.")
-
-    return logger
+    return pytest_logger

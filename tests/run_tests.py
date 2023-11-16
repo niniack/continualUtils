@@ -29,4 +29,4 @@ def main():
     if len(parts) > 1:
         pytest_arg += "::" + parts[1]
 
-    sys.exit(pytest.main(["-vv", pytest_arg]))
+    sys.exit(pytest.main([pytest_arg]))

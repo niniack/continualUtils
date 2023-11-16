@@ -1,9 +1,16 @@
 import numpy as np
-from avalanche.benchmarks import NCScenario
+from avalanche.benchmarks import SplitTinyImageNet
 from torch.testing import assert_close
 
 from continualUtils.benchmarks import SplitClickMe
 from continualUtils.benchmarks.datasets.preprocess import preprocess_input
+
+
+def test_load_tiny_imagenet(logger):
+    split_tiny_imagenet = SplitTinyImageNet(
+        n_experiences=10, dataset_root="/mnt/datasets/tinyimagenet", seed=42
+    )
+    logger.debug(dir(split_tiny_imagenet))
 
 
 def test_normalize_np_image():

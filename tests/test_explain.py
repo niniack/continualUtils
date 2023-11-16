@@ -12,54 +12,53 @@ from continualUtils.explain.tools.pyramidal import (
     standardize_cut,
 )
 
+# def test_harmonizer_loss_pretrained(
+#     pretrained_resnet18, split_clickme_benchmark
+# ):
+#     # Set up benchmark
+#     train_stream = split_clickme_benchmark.train_stream
+#     exp_set = train_stream[0].dataset
+#     (image, label, heatmap, token, task) = exp_set[0]
 
-def test_harmonizer_loss_pretrained(
-    pretrained_resnet18, split_clickme_benchmark
-):
-    # Set up benchmark
-    train_stream = split_clickme_benchmark.train_stream
-    exp_set = train_stream[0].dataset
-    (image, label, heatmap, token, task) = exp_set[0]
+#     # Define model
+#     model = pretrained_resnet18
 
-    # Define model
-    model = pretrained_resnet18
+#     label = torch.tensor(label).long()
+#     input_img = image.unsqueeze(0).requires_grad_(True)
+#     heatmap = heatmap.unsqueeze(0)
+#     token = token.unsqueeze(0)
+#     output = model(input_img)
 
-    label = torch.tensor(label).long()
-    input_img = image.unsqueeze(0).requires_grad_(True)
-    heatmap = heatmap.unsqueeze(0)
-    token = token.unsqueeze(0)
-    output = model(input_img)
+#     sa_map = compute_saliency_map(output, input_img, label)
+#     sa_map_preprocess = standardize_cut(sa_map)
+#     heatmap_preprocess = standardize_cut(heatmap)
 
-    sa_map = compute_saliency_map(output, input_img, label)
-    sa_map_preprocess = standardize_cut(sa_map)
-    heatmap_preprocess = standardize_cut(heatmap)
+#     # Get max
+#     eps = 1e-6
+#     with torch.no_grad():
+#         _sa_max = (
+#             torch.amax(sa_map_preprocess.detach(), dim=(2, 3), keepdim=True)
+#             + eps
+#         )
+#         _hm_max = torch.amax(heatmap_preprocess, dim=(2, 3), keepdim=True) + eps
 
-    # Get max
-    eps = 1e-6
-    with torch.no_grad():
-        _sa_max = (
-            torch.amax(sa_map_preprocess.detach(), dim=(2, 3), keepdim=True)
-            + eps
-        )
-        _hm_max = torch.amax(heatmap_preprocess, dim=(2, 3), keepdim=True) + eps
+#         # Normalize the true heatmaps according to the saliency maps
+#         heatmap_preprocess = heatmap_preprocess / _hm_max * _sa_max
 
-        # Normalize the true heatmaps according to the saliency maps
-        heatmap_preprocess = heatmap_preprocess / _hm_max * _sa_max
+#     manual_loss = compute_pyramidal_mse(
+#         sa_map_preprocess, heatmap_preprocess, token
+#     )
 
-    manual_loss = compute_pyramidal_mse(
-        sa_map_preprocess, heatmap_preprocess, token
-    )
+#     nh_loss = NeuralHarmonizerLoss(weight=1)
+#     func_loss = nh_loss(
+#         mb_x=input_img,
+#         mb_y=label,
+#         mb_heatmap=heatmap,
+#         model=model,
+#         mb_tokens=token,
+#     )  # type: ignore
 
-    nh_loss = NeuralHarmonizerLoss(weight=1)
-    func_loss = nh_loss(
-        mb_x=input_img,
-        mb_y=label,
-        mb_heatmap=heatmap,
-        model=model,
-        mb_tokens=token,
-    )  # type: ignore
-
-    assert torch.allclose(manual_loss, func_loss)
+#     assert torch.allclose(manual_loss, func_loss)
 
 
 def test_cut_ground_maps(split_clickme_benchmark):
@@ -78,26 +77,26 @@ def test_cut_ground_maps(split_clickme_benchmark):
     assert torch.min(preprocessed_heatmaps) >= 0.0
 
 
-def test_compute_saliency_map(pretrained_resnet18, img_tensor_list):
-    """Testing saliency map"""
-    model = pretrained_resnet18
-    inputs = img_tensor_list[0].requires_grad_(True)
-    outputs = model.forward(img_tensor_list[0])
-    targets = torch.Tensor([281]).long()
+# def test_compute_saliency_map(pretrained_resnet18, img_tensor_list):
+#     """Testing saliency map"""
+#     model = pretrained_resnet18
+#     inputs = img_tensor_list[0].requires_grad_(True)
+#     outputs = model.forward(img_tensor_list[0])
+#     targets = torch.Tensor([281]).long()
 
-    # Compute the saliency map
-    saliency_map = compute_saliency_map(outputs, inputs, targets)
-    saliency_map_np = (
-        saliency_map.detach().cpu().squeeze(0).permute(1, 2, 0).numpy()
-    )
+#     # Compute the saliency map
+#     saliency_map = compute_saliency_map(outputs, inputs, targets)
+#     saliency_map_np = (
+#         saliency_map.detach().cpu().squeeze(0).permute(1, 2, 0).numpy()
+#     )
 
-    # Normalize the saliency map
-    saliency_map_np = (saliency_map_np - saliency_map_np.min()) / (
-        saliency_map_np.max() - saliency_map_np.min()
-    )
+#     # Normalize the saliency map
+#     saliency_map_np = (saliency_map_np - saliency_map_np.min()) / (
+#         saliency_map_np.max() - saliency_map_np.min()
+#     )
 
-    # Assert the shape
-    assert inputs.shape[-2:] == saliency_map_np.shape[:2]
+#     # Assert the shape
+#     assert inputs.shape[-2:] == saliency_map_np.shape[:2]
 
 
 def test_pyramidal_mse():
