@@ -13,8 +13,12 @@ from avalanche.benchmarks.scenarios import (
     StreamDef,
     StreamUserDef,
 )
+from avalanche.benchmarks.utils.utils import concat_datasets
 
-from continualUtils.benchmarks.datasets.clickme import make_clickme_dataset
+from continualUtils.benchmarks.datasets.clickme import (
+    make_clickme_dataset,
+    make_clickme_style_imagenet_dataset,
+)
 
 
 def SplitClickMe(  # pylint: disable=C0103
@@ -28,6 +32,7 @@ def SplitClickMe(  # pylint: disable=C0103
     train_transform: Optional[Any] = None,
     eval_transform: Optional[Any] = None,
     dummy: bool = False,
+    include_imagenet: bool = False,
 ) -> Union[NCScenario, DatasetScenario]:
     """Returns a split version of the ClickMe dataset
 
@@ -96,6 +101,16 @@ def SplitClickMe(  # pylint: disable=C0103
         clickme_train = make_clickme_dataset(root=root, split="train")
         clickme_val = make_clickme_dataset(root=root, split="val")
 
+        if include_imagenet:
+            imagenet_train = make_clickme_style_imagenet_dataset(
+                root="/imagenet", split="train"
+            )
+            imagenet_test = make_clickme_style_imagenet_dataset(
+                root="/imagenet", split="val"
+            )
+
+            clickme_train = concat_datasets([clickme_train, imagenet_train])
+            clickme_test = concat_datasets([clickme_test, imagenet_test])
         # Make a benchmark with train stream
         benchmark_with_train = nc_benchmark(
             train_dataset=clickme_train,  # type: ignore

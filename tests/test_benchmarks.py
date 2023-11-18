@@ -39,10 +39,12 @@ def test_normalize_np_image():
     assert_close(normalized_img, expected_img, rtol=1e-03, atol=1e-03)
 
 
-def test_load_splitme(logger):
+def test_load_splitclickme(logger):
     """Test loading the SplitClickMe benchmark"""
     split_clickme = SplitClickMe(
-        n_experiences=10, root="/mnt/datasets/clickme", seed=42
+        n_experiences=10,
+        root="/mnt/datasets/clickme",
+        seed=42,
     )
 
     assert split_clickme.train_stream is not None

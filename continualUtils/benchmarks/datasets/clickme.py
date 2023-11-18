@@ -8,8 +8,10 @@ from typing import Any, Callable, Literal, Optional
 
 import numpy as np
 import torch
+from avalanche.benchmarks.datasets import ImageNet
 from avalanche.benchmarks.utils import make_classification_dataset
 from torch.utils.data import Dataset
+from torchvision import datasets, transforms
 from torchvision.transforms.functional import gaussian_blur, resize
 
 from continualUtils.benchmarks.datasets.preprocess import preprocess_input
@@ -28,10 +30,50 @@ HEATMAP_INDEX = 2
 TOKEN_INDEX = 3
 
 
+def make_clickme_style_imagenet_dataset(
+    root: str, split: Literal["train", "val"]
+):
+    """Returns ClickMeImageNetWrapperDataset as an Avalanche Dataset"""
+    dataset = ClickMeImageNetWrapperDataset(root=root, split=split)
+    return make_classification_dataset(dataset)
+
+
 def make_clickme_dataset(root: str, split: Literal["train", "val", "test"]):
     """Returns ClickMe as an Avalanche Dataset"""
     dataset = ClickMeDataset(root=root, split=split)
     return make_classification_dataset(dataset)
+
+
+class ClickMeImageNetWrapperDataset(datasets.ImageNet):
+    """Dataset generator that wraps around ImageNet to return ClickMe style
+    dataset
+    """
+
+    def __init__(
+        self,
+        root: str,
+        split: str,
+        transform: Optional[Callable] = None,
+        target_transform: Optional[Callable] = None,
+        **kwargs
+    ):
+        super().__init__(
+            root,
+            split=split,
+            transform=transform,
+            target_transform=target_transform,
+            **kwargs
+        )
+
+    def __getitem__(self, index: int):
+        # Retrieve the image and label from the ImageNet dataset
+        image, label = super().__getitem__(index)
+
+        # Extend the dataset to return ClickMe style data
+        heatmap = None
+        token = 0
+
+        return image, label, heatmap, token
 
 
 class ClickMeDataset(Dataset):
@@ -50,6 +92,7 @@ class ClickMeDataset(Dataset):
         self.split = split
 
         self.split_dir = "clickme_" + split + "/"
+
         self.full_path = Path(self.root).joinpath(self.split_dir)
         self.files = list(self.full_path.glob("*.npz"))
 
