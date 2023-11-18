@@ -12,7 +12,11 @@ from avalanche.benchmarks.datasets import ImageNet
 from avalanche.benchmarks.utils import make_classification_dataset
 from torch.utils.data import Dataset
 from torchvision import datasets, transforms
-from torchvision.transforms.functional import gaussian_blur, resize
+from torchvision.transforms.functional import (
+    gaussian_blur,
+    pil_to_tensor,
+    resize,
+)
 
 from continualUtils.benchmarks.datasets.preprocess import preprocess_input
 
@@ -68,6 +72,9 @@ class ClickMeImageNetWrapperDataset(datasets.ImageNet):
     def __getitem__(self, index: int):
         # Retrieve the image and label from the ImageNet dataset
         image, label = super().__getitem__(index)
+
+        image = preprocess_input(pil_to_tensor(image))
+        image = resize(image, size=224, antialias=False)  # type: ignore
 
         # Extend the dataset to return ClickMe style data
         heatmap = None

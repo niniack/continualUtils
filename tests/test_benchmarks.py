@@ -55,4 +55,4 @@ def test_load_splitclickme(logger):
     assert val_exp is not None
 
     assert hasattr(val_exp, "classes_in_this_experience")
-    logger.debug(val_exp.classes_in_this_experience)
+    logger.debug(len(val_exp.dataset))
