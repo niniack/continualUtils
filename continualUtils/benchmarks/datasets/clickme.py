@@ -73,8 +73,9 @@ class ClickMeImageNetWrapperDataset(datasets.ImageNet):
         # Retrieve the image and label from the ImageNet dataset
         image, label = super().__getitem__(index)
 
-        image = preprocess_input(pil_to_tensor(image))
-        image = resize(image, size=224, antialias=False)  # type: ignore
+        image = preprocess_input(torch.permute(pil_to_tensor(image), (1, 2, 0)))
+        image = torch.permute(image, (2, 0, 1))
+        image = resize(image, size=(224, 224), antialias=False)  # type: ignore
 
         # Extend the dataset to return ClickMe style data
         heatmap = None
