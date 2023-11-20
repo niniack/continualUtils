@@ -84,7 +84,7 @@ class ClickMeImageNetWrapperDataset(datasets.ImageNet):
 
         # Extend the dataset to return ClickMe style data
         heatmap = ClickMeImageNetWrapperDataset.map_placeholder
-        token = 0
+        token = torch.tensor(0).float()
 
         return image, label, heatmap, token
 
