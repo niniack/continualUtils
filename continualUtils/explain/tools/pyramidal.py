@@ -1,5 +1,3 @@
-from typing import List, Union
-
 import torch
 import torch.nn.functional as F
 
@@ -15,7 +13,8 @@ def standardize_cut(heatmaps, axes=(2, 3), epsilon=1e-12):
     """
     if heatmaps.dim() != 4:
         raise ValueError(
-            f"Ensure that heatmaps are in NCHW cuDNN format, there are currently {heatmaps.dim()} dims"
+            f"""Ensure that heatmaps are in NCHW cuDNN format, 
+            there are currently {heatmaps.dim()} dims"""
         )
 
     means = torch.mean(heatmaps, dim=axes, keepdim=True)

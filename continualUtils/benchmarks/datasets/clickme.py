@@ -10,6 +10,7 @@ import numpy as np
 import torch
 from avalanche.benchmarks.datasets import ImageNet
 from avalanche.benchmarks.utils import make_classification_dataset
+from torch import Tensor
 from torch.utils.data import Dataset
 from torchvision import datasets, transforms
 from torchvision.transforms.functional import (
@@ -53,6 +54,8 @@ class ClickMeImageNetWrapperDataset(datasets.ImageNet):
     dataset
     """
 
+    map_placeholder: Tensor = torch.empty((1, 224, 224))
+
     def __init__(
         self,
         root: str,
@@ -78,7 +81,7 @@ class ClickMeImageNetWrapperDataset(datasets.ImageNet):
         image = resize(image, size=(224, 224), antialias=False)  # type: ignore
 
         # Extend the dataset to return ClickMe style data
-        heatmap = None
+        heatmap = ClickMeImageNetWrapperDataset.map_placeholder
         token = 0
 
         return image, label, heatmap, token
