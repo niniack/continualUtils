@@ -54,7 +54,7 @@ class ClickMeImageNetWrapperDataset(datasets.ImageNet):
     dataset
     """
 
-    map_placeholder: Tensor = torch.empty((1, 224, 224))
+    map_placeholder: Tensor = torch.empty((1, 224, 224), dtype=torch.float)
 
     def __init__(
         self,
@@ -76,7 +76,9 @@ class ClickMeImageNetWrapperDataset(datasets.ImageNet):
         # Retrieve the image and label from the ImageNet dataset
         image, label = super().__getitem__(index)
 
-        image = preprocess_input(torch.permute(pil_to_tensor(image), (1, 2, 0)))
+        image = preprocess_input(
+            torch.permute(pil_to_tensor(image), (1, 2, 0))
+        ).float()
         image = torch.permute(image, (2, 0, 1))
         image = resize(image, size=(224, 224), antialias=False)  # type: ignore
 
