@@ -75,15 +75,20 @@ class NeuralHarmonizerPlugin(SupervisedPlugin):
         strategy.mb_tokens = strategy.mbatch[TOKEN_INDEX]
         strategy.mb_tasks = strategy.mbatch[4]
 
+        # NH is a heavy operation, should only be done for samples with heatmaps
+        # Compute all indices with token set to 1
+        indices = torch.nonzero(strategy.mb_tokens, as_tuple=True)
+
         # Uses the `__call__` method
         # Send in the cloned input with gradients turned on
+        # Select samples with heatmap
         harmonizer_loss = self.harmonizer(
-            cloned_mb_x,
-            strategy.mb_y,
-            strategy.mb_heatmaps,
-            strategy.model,
-            strategy.mb_tokens,
-            strategy.mb_tasks,
+            cloned_mb_x[indices],
+            strategy.mb_y[indices],
+            strategy.mb_heatmaps[indices],
+            strategy.model[indices],
+            strategy.mb_tokens[indices],
+            strategy.mb_tasks[indices],
         )
 
         # Add the harmonizer loss
