@@ -86,7 +86,7 @@ class NeuralHarmonizerPlugin(SupervisedPlugin):
             cloned_mb_x[indices],
             strategy.mb_y[indices],
             strategy.mb_heatmaps[indices],
-            strategy.model[indices],
+            strategy.model,
             strategy.mb_tokens[indices],
             strategy.mb_tasks[indices],
         )
