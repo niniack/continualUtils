@@ -147,7 +147,8 @@ class ClickMeDataset(Dataset):
         # Process heatmap
         heatmap = torch.from_numpy(np_heatmap).float()
         heatmap = resize(heatmap.unsqueeze(0), size=64, antialias=False)  # type: ignore
-        heatmap = gaussian_blur(heatmap, kernel_size=(10, 10), sigma=(10, 10))  # type: ignore
+        heatmap = gaussian_blur(heatmap, kernel_size=(11, 11), sigma=(11, 11))  # type: ignore
+        # ValueError: kernel_size should have odd and positive integers. Got (10, 10)
 
         heatmap = resize(heatmap, size=224, antialias=False)  # type: ignore
 
