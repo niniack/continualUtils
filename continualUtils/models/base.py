@@ -200,7 +200,7 @@ class HuggingFaceResNet(BaseModel):
                     "Task labels were not provided. Running forward on all tasks."
                 )
 
-            with torch.set_grad_enabled(self._freeze_backbone):
+            with torch.set_grad_enabled(not self._freeze_backbone):
                 out = self._model.resnet(
                     x, output_hidden_states=self.output_hidden, return_dict=True
                 )
@@ -215,7 +215,7 @@ class HuggingFaceResNet(BaseModel):
                 flat_pooler_out, task_labels
             )
         else:
-            with torch.set_grad_enabled(self._freeze_backbone):
+            with torch.set_grad_enabled(not self._freeze_backbone):
                 out = self._model(
                     x, output_hidden_states=self.output_hidden, return_dict=True
                 )
