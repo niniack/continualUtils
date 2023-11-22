@@ -70,6 +70,8 @@ class BaseModel(ABC, MultiTaskModule, DynamicModule):
         # https://pytorch.org/functorch/stable/batch_norm.html
         self._patch_batch_norm()
 
+        self._freeze_backbone: bool = False
+
     def _init_weights(self):
         """
         Applies the Kaiming Normal initialization to all weights in the model.
@@ -185,6 +187,9 @@ class HuggingFaceResNet(BaseModel):
         self._model = self._model.from_pretrained(dir_name)
         self._model = self._model.to(self.device)
 
+    def freeze_backbone(self, flag: bool):
+        self._freeze_backbone = flag
+
     def get_hidden_layer(self, id):
         raise NotImplementedError("To Do!")
 
@@ -195,9 +200,10 @@ class HuggingFaceResNet(BaseModel):
                     "Task labels were not provided. Running forward on all tasks."
                 )
 
-            out = self._model.resnet(
-                x, output_hidden_states=self.output_hidden, return_dict=True
-            )
+            with torch.set_grad_enabled(self._freeze_backbone):
+                out = self._model.resnet(
+                    x, output_hidden_states=self.output_hidden, return_dict=True
+                )
 
             # Reshape pooler output
             flat_pooler_out = out.pooler_output.view(
@@ -209,9 +215,10 @@ class HuggingFaceResNet(BaseModel):
                 flat_pooler_out, task_labels
             )
         else:
-            out = self._model(
-                x, output_hidden_states=self.output_hidden, return_dict=True
-            )
+            with torch.set_grad_enabled(self._freeze_backbone):
+                out = self._model(
+                    x, output_hidden_states=self.output_hidden, return_dict=True
+                )
             classifier_out = out.logits
 
         if self.output_hidden:
