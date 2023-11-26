@@ -4,7 +4,7 @@ https://github.com/serre-lab/Harmonization/blob/main/harmonization/common/clickm
 """
 import json
 from pathlib import Path
-from typing import Any, Callable, Literal, Optional
+from typing import Callable, Literal, Optional
 
 import numpy as np
 import torch
@@ -156,8 +156,8 @@ class ClickMeDataset(Dataset):
 
         heatmap = resize(heatmap, size=224, antialias=False)  # type: ignore
 
-        label = torch.from_numpy(np_label)
-        token = self.tokens[index]
+        label = torch.from_numpy(np_label).unsqueeze(0)
+        token = self.tokens[index].unsqueeze(0)
 
         if self.transform is not None:
             image = self.transform(image)

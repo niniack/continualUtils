@@ -53,22 +53,22 @@ def test_load_splitclickme(logger, device, tmpdir):
     ds_root = "/mnt/datasets/clickme"
 
     split_clickme = SplitClickMe(
-        n_experiences=10, root=ds_root, seed=42, dummy=True
+        n_experiences=10, root=ds_root, seed=42, dummy=False
     )
 
     enable_ffcv(
         benchmark=split_clickme,
         write_dir=f"{ds_root}/ffcv",
         device=device,
-        ffcv_parameters=dict(num_workers=16),
+        ffcv_parameters=dict(num_workers=8),
         print_summary=True,
     )
 
-    # assert split_clickme.train_stream is not None
-    # assert split_clickme.test_stream is not None
-    # assert split_clickme.val_stream is not None
+    assert split_clickme.train_stream is not None
+    assert split_clickme.test_stream is not None
+    assert split_clickme.val_stream is not None
 
-    # val_exp = next(iter(split_clickme.val_stream), None)
-    # assert val_exp is not None
+    val_exp = next(iter(split_clickme.val_stream), None)
+    assert val_exp is not None
 
-    # assert hasattr(val_exp, "classes_in_this_experience")
+    assert hasattr(val_exp, "classes_in_this_experience")
