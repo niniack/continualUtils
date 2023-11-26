@@ -75,15 +75,13 @@ def SplitClickMe(  # pylint: disable=C0103
     :return: A properly initialized :class:`NCScenario` instance.
     """
 
-    # Make test dataset
-    clickme_test = make_clickme_dataset(root=root, split="test")
-
     # DEBUG for faster loading of the dataset
     if dummy:
-        clickme_val = make_clickme_dataset(root=root, split="val")
+        clickme_train = make_clickme_dataset(root=root, split="dtrain")
+        clickme_test = make_clickme_dataset(root=root, split="dtest")
 
         return nc_benchmark(
-            train_dataset=clickme_val,  # type: ignore
+            train_dataset=clickme_train,  # type: ignore
             test_dataset=clickme_test,  # type: ignore
             n_experiences=n_experiences,
             task_labels=return_task_id,
@@ -98,6 +96,7 @@ def SplitClickMe(  # pylint: disable=C0103
 
     # Actual benchmark
     else:
+        clickme_test = make_clickme_dataset(root=root, split="test")
         clickme_train = make_clickme_dataset(root=root, split="train")
         clickme_val = make_clickme_dataset(root=root, split="val")
 

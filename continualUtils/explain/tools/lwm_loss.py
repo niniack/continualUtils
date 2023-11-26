@@ -190,6 +190,6 @@ class LwMLoss(RegularizationMethod):
 
                 prev_map = standardize_cut(prev_map)
 
-                loss_att_dist += F.l1_loss(curr_map, prev_map, reduction="mean")
+                loss_att_dist += F.l1_loss(curr_map, prev_map, reduction="mean")  # type: ignore
 
             return loss_att_dist

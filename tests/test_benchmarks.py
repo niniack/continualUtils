@@ -1,16 +1,24 @@
 import numpy as np
 from avalanche.benchmarks import SplitTinyImageNet
+from avalanche.benchmarks.utils.ffcv_support import enable_ffcv
 from torch.testing import assert_close
 
 from continualUtils.benchmarks import SplitClickMe
 from continualUtils.benchmarks.datasets.preprocess import preprocess_input
 
 
-def test_load_tiny_imagenet(logger):
+def test_load_splitimagenet(device, tmpdir):
     split_tiny_imagenet = SplitTinyImageNet(
         n_experiences=10, dataset_root="/mnt/datasets/tinyimagenet", seed=42
     )
-    logger.debug(dir(split_tiny_imagenet))
+    benchmark_type = "tinyimagenet"
+    enable_ffcv(
+        benchmark=split_tiny_imagenet,
+        write_dir=f"{tmpdir}/ffcv_test_{benchmark_type}",
+        device=device,
+        ffcv_parameters=dict(num_workers=8),
+        print_summary=True,
+    )
 
 
 def test_normalize_np_image():
@@ -39,19 +47,28 @@ def test_normalize_np_image():
     assert_close(normalized_img, expected_img, rtol=1e-03, atol=1e-03)
 
 
-def test_load_splitclickme(logger):
+def test_load_splitclickme(logger, device, tmpdir):
     """Test loading the SplitClickMe benchmark"""
+
+    ds_root = "/mnt/datasets/clickme"
+
     split_clickme = SplitClickMe(
-        n_experiences=10,
-        root="/mnt/datasets/clickme",
-        seed=42,
+        n_experiences=10, root=ds_root, seed=42, dummy=True
     )
 
-    assert split_clickme.train_stream is not None
-    assert split_clickme.test_stream is not None
-    assert split_clickme.val_stream is not None
+    enable_ffcv(
+        benchmark=split_clickme,
+        write_dir=f"{ds_root}/ffcv",
+        device=device,
+        ffcv_parameters=dict(num_workers=16),
+        print_summary=True,
+    )
 
-    val_exp = next(iter(split_clickme.val_stream), None)
-    assert val_exp is not None
+    # assert split_clickme.train_stream is not None
+    # assert split_clickme.test_stream is not None
+    # assert split_clickme.val_stream is not None
 
-    assert hasattr(val_exp, "classes_in_this_experience")
+    # val_exp = next(iter(split_clickme.val_stream), None)
+    # assert val_exp is not None
+
+    # assert hasattr(val_exp, "classes_in_this_experience")

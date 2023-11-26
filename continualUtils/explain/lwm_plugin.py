@@ -1,5 +1,3 @@
-import torch
-from avalanche.evaluation.metric_results import MetricValue
 from avalanche.training.plugins.strategy_plugin import SupervisedPlugin
 
 from continualUtils.explain.tools.lwm_loss import LwMLoss

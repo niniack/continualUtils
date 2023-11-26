@@ -25,8 +25,9 @@ def main():
 
     # Construct the argument for pytest.main by combining the absolute path of the test file
     # with the test name specifier, if it was provided.
-    pytest_arg = str(test_file_path)
+    pytest_args = [str(test_file_path)]
+    pytest_args.append("-s")  # Verbose output
     if len(parts) > 1:
-        pytest_arg += "::" + parts[1]
+        pytest_args[0] += "::" + parts[1]
 
-    sys.exit(pytest.main([pytest_arg]))
+    sys.exit(pytest.main(pytest_args))

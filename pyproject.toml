@@ -10,7 +10,11 @@ packages = [{include = "continualUtils"}]
 [tool.poetry.dependencies]
 python = ">=3.8,<3.11"
 avalanche-lib = { git = "https://github.com/ContinualAI/avalanche", rev = "12f37f8"}
+ffcv = "*"
+cupy-cuda11x = "*"
 transformers = "^4.33.3"
+numba = "*"
+tbb = "*"
 
 [tool.poetry.group.docker]
 optional = true

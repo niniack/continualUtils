@@ -43,7 +43,9 @@ def make_clickme_style_imagenet_dataset(
     return _make_taskaware_classification_dataset(dataset)
 
 
-def make_clickme_dataset(root: str, split: Literal["train", "val", "test"]):
+def make_clickme_dataset(
+    root: str, split: Literal["train", "val", "test", "dtrain", "dtest"]
+):
     """Returns ClickMe as an Avalanche Dataset"""
     dataset = ClickMeDataset(root=root, split=split)
     return _make_taskaware_classification_dataset(dataset)
@@ -100,6 +102,7 @@ class ClickMeDataset(Dataset):
         root: str,
         split: str,
         transform: Optional[Callable] = None,
+        target_transform: Optional[Callable] = None,
     ):
         self.root = root
         self.split = split
@@ -110,6 +113,7 @@ class ClickMeDataset(Dataset):
         self.files = list(self.full_path.glob("*.npz"))
 
         self.transform = transform
+        self.target_transform = target_transform
         # Load targets
         target_path = self.full_path.joinpath("metadata.json")
         if target_path.exists():
@@ -152,7 +156,7 @@ class ClickMeDataset(Dataset):
 
         heatmap = resize(heatmap, size=224, antialias=False)  # type: ignore
 
-        label = np_label
+        label = torch.from_numpy(np_label)
         token = self.tokens[index]
 
         if self.transform is not None:
