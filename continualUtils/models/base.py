@@ -184,7 +184,9 @@ class HuggingFaceResNet(BaseModel):
     def _load_weights_impl(self, dir_name):
         print(f"Loading from {dir_name}")
         # Load model
-        self._model = self._model.from_pretrained(dir_name)
+        self._model = self._model.from_pretrained(
+            dir_name, local_files_only=True
+        )
         self._model = self._model.to(self.device)
 
     def freeze_backbone(self, flag: bool):

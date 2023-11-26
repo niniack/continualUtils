@@ -2,10 +2,22 @@ import torch
 import torch.nn.functional as F
 from torch import Tensor, nn
 
-from continualUtils.models import CustomResNet50
+from continualUtils.models import CustomResNet50, PretrainedResNet50
 
 
-def test_multihead(device, split_tiny_imagenet, logger):
+def test_save_load(device, tmpdir):
+    model = PretrainedResNet50(
+        device=device,
+        num_classes_per_head=10,
+        multihead=True,
+    )
+
+    model.save_weights(f"{tmpdir}/model")
+
+    model.load_weights(f"{tmpdir}/model")
+
+
+def test_multihead(device, split_tiny_imagenet):
     """Tests multihead implementation"""
     model = CustomResNet50(
         device=device,
@@ -17,7 +29,6 @@ def test_multihead(device, split_tiny_imagenet, logger):
     train_stream = split_tiny_imagenet.train_stream
     exp_set = train_stream[0].dataset
     image, *_ = exp_set[0]
-    logger.debug(image.shape)
     image = F.interpolate(image.unsqueeze(0), (224, 224)).to(device)
 
     model.adapt_model(experiences=train_stream[0])
