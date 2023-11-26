@@ -83,10 +83,10 @@ class ClickMeImageNetWrapperDataset(datasets.ImageNet):
         ).float()
         image = torch.permute(image, (2, 0, 1))
         image = resize(image, size=(224, 224), antialias=False)  # type: ignore
-
+        label = torch.tensor(label).unsqueeze(0)
         # Extend the dataset to return ClickMe style data
         heatmap = ClickMeImageNetWrapperDataset.map_placeholder
-        token = torch.tensor(0).float()
+        token = torch.tensor(0).float().unsqueeze(0)
 
         return image, label, heatmap, token
 
