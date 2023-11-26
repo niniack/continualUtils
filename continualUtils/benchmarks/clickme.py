@@ -6,13 +6,13 @@ from avalanche.benchmarks import (
     NCStream,
     nc_benchmark,
 )
-from avalanche.benchmarks.generators.benchmark_generators import TCLDataset
 from avalanche.benchmarks.scenarios import (
     ClassificationScenario,
     DatasetScenario,
     StreamDef,
     StreamUserDef,
 )
+from avalanche.benchmarks.utils import AvalancheDataset
 from avalanche.benchmarks.utils.utils import concat_datasets
 
 from continualUtils.benchmarks.datasets.clickme import (
@@ -155,17 +155,17 @@ def SplitClickMe(  # pylint: disable=C0103
         # Get stream definitions from benchmark with train
         # and create new one based on that
         benchmark_with_train_stream_definitions: Dict[
-            str, StreamDef[TCLDataset]  # type: ignore
+            str, StreamDef[AvalancheDataset]  # type: ignore
         ] = benchmark_with_train.stream_definitions
 
         new_stream_definitions: Dict[
-            str, Union[StreamUserDef[TCLDataset], StreamDef[TCLDataset]]  # type: ignore
+            str, Union[StreamUserDef[AvalancheDataset], StreamDef[AvalancheDataset]]  # type: ignore
         ] = dict(benchmark_with_train_stream_definitions)
 
         # Get stream definitions from benchmark with val
         # and use it to grab task_labels
         benchmark_with_val_stream_definitions: Dict[
-            str, StreamDef[TCLDataset]  # type: ignore
+            str, StreamDef[AvalancheDataset]  # type: ignore
         ] = benchmark_with_val.stream_definitions
 
         val_exps_tasks_labels = list(
@@ -176,13 +176,13 @@ def SplitClickMe(  # pylint: disable=C0103
 
         # Get val experiences
         valid_exps_source: Union[
-            Iterable[TCLDataset], Tuple[Iterable[TCLDataset], int]  # type: ignore
+            Iterable[AvalancheDataset], Tuple[Iterable[AvalancheDataset], int]  # type: ignore
         ] = []
         for val_exp in val_stream:
             valid_exps_source.append(val_exp.dataset)
 
         # Make new stream definition for val stream
-        val_stream_def: StreamUserDef[TCLDataset] = StreamUserDef(  # type: ignore
+        val_stream_def: StreamUserDef[AvalancheDataset] = StreamUserDef(  # type: ignore
             valid_exps_source,
             val_exps_tasks_labels,
             benchmark_with_val_stream_definitions[

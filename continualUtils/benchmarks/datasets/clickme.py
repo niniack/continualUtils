@@ -9,7 +9,7 @@ from typing import Any, Callable, Literal, Optional
 import numpy as np
 import torch
 from avalanche.benchmarks.datasets import ImageNet
-from avalanche.benchmarks.utils import make_classification_dataset
+from avalanche.benchmarks.utils import _make_taskaware_classification_dataset
 from torch import Tensor
 from torch.utils.data import Dataset
 from torchvision import datasets, transforms
@@ -40,13 +40,13 @@ def make_clickme_style_imagenet_dataset(
 ):
     """Returns ClickMeImageNetWrapperDataset as an Avalanche Dataset"""
     dataset = ClickMeImageNetWrapperDataset(root=root, split=split)
-    return make_classification_dataset(dataset)
+    return _make_taskaware_classification_dataset(dataset)
 
 
 def make_clickme_dataset(root: str, split: Literal["train", "val", "test"]):
     """Returns ClickMe as an Avalanche Dataset"""
     dataset = ClickMeDataset(root=root, split=split)
-    return make_classification_dataset(dataset)
+    return _make_taskaware_classification_dataset(dataset)
 
 
 class ClickMeImageNetWrapperDataset(datasets.ImageNet):
