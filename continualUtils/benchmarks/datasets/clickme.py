@@ -168,6 +168,7 @@ class ClickMeDataset(Dataset):
             image = self.transform(image)
 
         # Apply any transformations to labels
+        label = torch.from_numpy(label).unsqueeze(0)
         if self.target_transform is not None:
             label = self.target_transform(label)
 
