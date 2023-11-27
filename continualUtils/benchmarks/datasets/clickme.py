@@ -66,7 +66,7 @@ class ClickMeImageNetWrapperDataset(datasets.ImageNet):
                 [
                     v2.ToImage(),
                     v2.ToDtype(torch.float32, scale=True),
-                    v2.Resize((224, 224)),
+                    v2.Resize((224, 224), antialias=True),
                     v2.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD),
                 ]
             )
@@ -129,7 +129,7 @@ class ClickMeDataset(Dataset):
                 [
                     v2.ToImage(),
                     v2.ToDtype(torch.float32, scale=True),
-                    v2.Resize((224, 224)),
+                    v2.Resize((224, 224), antialias=True),
                     v2.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD),
                 ]
             )
@@ -142,9 +142,9 @@ class ClickMeDataset(Dataset):
             [
                 v2.ToImage(),
                 v2.ToDtype(torch.float32, scale=True),
-                v2.Resize((64, 64)),
+                v2.Resize((64, 64), antialias=True),
                 v2.GaussianBlur(kernel_size=(7, 7), sigma=(7, 7)),
-                v2.Resize((224, 224)),
+                v2.Resize((224, 224), antialias=True),
             ]
         )
 
@@ -168,7 +168,6 @@ class ClickMeDataset(Dataset):
             image = self.transform(image)
 
         # Apply any transformations to labels
-        label = torch.from_numpy(label)
         if self.target_transform is not None:
             label = self.target_transform(label)
 

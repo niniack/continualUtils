@@ -74,3 +74,5 @@ def test_load_splitclickme(logger, device, tmpdir):
     batch = next(iter(dataloader))
 
     assert len(batch) is 5
+
+    image, label, heatmap, token, task = batch
