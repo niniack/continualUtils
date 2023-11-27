@@ -1,5 +1,6 @@
 import numpy as np
 from avalanche.benchmarks import SplitTinyImageNet
+from avalanche.benchmarks.utils.data_loader import TaskBalancedDataLoader
 from avalanche.benchmarks.utils.ffcv_support import enable_ffcv
 from torch.testing import assert_close
 
@@ -56,14 +57,6 @@ def test_load_splitclickme(logger, device, tmpdir):
         n_experiences=10, root=ds_root, seed=42, dummy=False
     )
 
-    enable_ffcv(
-        benchmark=split_clickme,
-        write_dir=f"{ds_root}/ffcv",
-        device=device,
-        ffcv_parameters=dict(num_workers=8),
-        print_summary=True,
-    )
-
     assert split_clickme.train_stream is not None
     assert split_clickme.test_stream is not None
     assert split_clickme.val_stream is not None
@@ -72,3 +65,12 @@ def test_load_splitclickme(logger, device, tmpdir):
     assert val_exp is not None
 
     assert hasattr(val_exp, "classes_in_this_experience")
+
+    dataloader = TaskBalancedDataLoader(
+        split_clickme.train_stream[0].dataset,
+        oversample_small_groups=True,
+    )
+
+    batch = next(iter(dataloader))
+
+    assert len(batch) is 5

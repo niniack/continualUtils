@@ -8,18 +8,11 @@ from typing import Callable, Literal, Optional
 
 import numpy as np
 import torch
-from avalanche.benchmarks.datasets import ImageNet
 from avalanche.benchmarks.utils import _make_taskaware_classification_dataset
 from torch import Tensor
 from torch.utils.data import Dataset
-from torchvision import datasets, transforms
-from torchvision.transforms.functional import (
-    gaussian_blur,
-    pil_to_tensor,
-    resize,
-)
-
-from continualUtils.benchmarks.datasets.preprocess import preprocess_input
+from torchvision import datasets
+from torchvision.transforms import v2
 
 # Dataset hosting info
 CLICKME_BASE_URL = (
@@ -33,6 +26,9 @@ LOCAL_PATH = "~/datasets/clickme/"
 
 HEATMAP_INDEX = 2
 TOKEN_INDEX = 3
+
+IMAGENET_MEAN = [0.485, 0.456, 0.406]
+IMAGENET_STD = [0.229, 0.224, 0.225]
 
 
 def make_clickme_style_imagenet_dataset(
@@ -52,9 +48,7 @@ def make_clickme_dataset(
 
 
 class ClickMeImageNetWrapperDataset(datasets.ImageNet):
-    """Dataset generator that wraps around ImageNet to return ClickMe style
-    dataset
-    """
+    """Dataset generator that wraps around ImageNet to return ClickMe style dataset."""
 
     map_placeholder: Tensor = torch.empty((1, 224, 224), dtype=torch.float)
 
@@ -66,6 +60,17 @@ class ClickMeImageNetWrapperDataset(datasets.ImageNet):
         target_transform: Optional[Callable] = None,
         **kwargs
     ):
+        # If no transform is provided, define the default
+        if transform is None:
+            transform = v2.Compose(
+                [
+                    v2.ToImage(),
+                    v2.ToDtype(torch.float32, scale=True),
+                    v2.Resize((224, 224)),
+                    v2.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD),
+                ]
+            )
+
         super().__init__(
             root,
             split=split,
@@ -78,15 +83,9 @@ class ClickMeImageNetWrapperDataset(datasets.ImageNet):
         # Retrieve the image and label from the ImageNet dataset
         image, label = super().__getitem__(index)
 
-        image = preprocess_input(
-            torch.permute(pil_to_tensor(image), (1, 2, 0))
-        ).float()
-        image = torch.permute(image, (2, 0, 1))
-        image = resize(image, size=(224, 224), antialias=False)  # type: ignore
-        label = torch.tensor(label).unsqueeze(0)
-        # Extend the dataset to return ClickMe style data
+        # Heatmap and token are placeholders
         heatmap = ClickMeImageNetWrapperDataset.map_placeholder
-        token = torch.tensor(0).float().unsqueeze(0)
+        token = torch.tensor([0])
 
         return image, label, heatmap, token
 
@@ -112,8 +111,6 @@ class ClickMeDataset(Dataset):
         self.full_path = Path(self.root).joinpath(self.split_dir)
         self.files = list(self.full_path.glob("*.npz"))
 
-        self.transform = transform
-        self.target_transform = target_transform
         # Load targets
         target_path = self.full_path.joinpath("metadata.json")
         if target_path.exists():
@@ -125,41 +122,61 @@ class ClickMeDataset(Dataset):
                 int(np.load(str(self.files[x]))["label"])
                 for x in range(len(self.files))
             ]
-        self.tokens = torch.ones(len(self.files))
+
+        # Define composed transforms for images
+        self.transform = (
+            v2.Compose(
+                [
+                    v2.ToImage(),
+                    v2.ToDtype(torch.float32, scale=True),
+                    v2.Resize((224, 224)),
+                    v2.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD),
+                ]
+            )
+            if transform is None
+            else transform
+        )
+
+        # Define composed transforms for heatmap
+        self.heatmap_transform = v2.Compose(
+            [
+                v2.ToImage(),
+                v2.ToDtype(torch.float32, scale=True),
+                v2.Resize((64, 64)),
+                v2.GaussianBlur(kernel_size=(7, 7), sigma=(7, 7)),
+                v2.Resize((224, 224)),
+            ]
+        )
+
+        # Define composed transforms for labels if needed
+        self.target_transform = target_transform
 
     def __len__(self):
         """
         Returns the size of the dataset
         """
-
         return len(self.targets)
 
     def __getitem__(self, index):
-        """
-        Returns a batch of images, labels, and heatmaps as Torch tensors
-        Note: due to how Avalanche processes the batch, we must preserve the images, labels, and heatmaps order.
-        """
         data = np.load(str(self.files[index]))
-        np_img = data["image"]
-        np_heatmap = data["heatmap"]
-        np_label = data["label"]
+        image = data["image"]
+        label = data["label"]
+        heatmap = data["heatmap"]
 
-        np_img = preprocess_input(np_img)
-        image = torch.from_numpy(np.transpose(np_img, (2, 0, 1))).float()
-        image = resize(image, size=224, antialias=False)  # type: ignore
-
-        # Process heatmap
-        heatmap = torch.from_numpy(np_heatmap).float()
-        heatmap = resize(heatmap.unsqueeze(0), size=64, antialias=False)  # type: ignore
-        heatmap = gaussian_blur(heatmap, kernel_size=(11, 11), sigma=(11, 11))  # type: ignore
-        # ValueError: kernel_size should have odd and positive integers. Got (10, 10)
-
-        heatmap = resize(heatmap, size=224, antialias=False)  # type: ignore
-
-        label = torch.from_numpy(np_label).unsqueeze(0)
-        token = self.tokens[index].unsqueeze(0)
-
+        # Transform images
         if self.transform is not None:
             image = self.transform(image)
+
+        # Apply any transformations to labels
+        label = torch.from_numpy(label)
+        if self.target_transform is not None:
+            label = self.target_transform(label)
+
+        # Process heatmap
+        heatmap = heatmap[..., np.newaxis]
+        if self.heatmap_transform is not None:
+            heatmap = self.heatmap_transform(heatmap)
+
+        token = torch.tensor([1])
 
         return image, label, heatmap, token
