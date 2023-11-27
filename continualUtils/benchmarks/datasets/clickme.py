@@ -130,7 +130,6 @@ class ClickMeDataset(Dataset):
         self.transform = (
             v2.Compose(
                 [
-                    v2.ToImage(),
                     v2.ToDtype(torch.float32, scale=True),
                     v2.Resize((224, 224), antialias=True),
                     v2.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD),
@@ -177,6 +176,7 @@ class ClickMeDataset(Dataset):
 
         # Process heatmap
         heatmap = heatmap[..., np.newaxis]
+        heatmap = torch.from_numpy(heatmap).permute((2, 0, 1)).contiguous()
         if self.heatmap_transform is not None:
             heatmap = self.heatmap_transform(heatmap)
 
