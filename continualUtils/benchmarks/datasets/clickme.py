@@ -83,6 +83,8 @@ class ClickMeImageNetWrapperDataset(datasets.ImageNet):
         # Retrieve the image and label from the ImageNet dataset
         image, label = super().__getitem__(index)
 
+        label = torch.from_numpy(label).unsqueeze(0)
+
         # Heatmap and token are placeholders
         heatmap = ClickMeImageNetWrapperDataset.map_placeholder
         token = torch.tensor([0])
