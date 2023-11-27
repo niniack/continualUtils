@@ -12,6 +12,7 @@ from avalanche.benchmarks.utils import _make_taskaware_classification_dataset
 from torch import Tensor
 from torch.utils.data import Dataset
 from torchvision import datasets
+from torchvision.transforms import functional as F
 from torchvision.transforms import v2
 
 # Dataset hosting info
@@ -64,7 +65,6 @@ class ClickMeImageNetWrapperDataset(datasets.ImageNet):
         if transform is None:
             transform = v2.Compose(
                 [
-                    v2.ToImage(),
                     v2.ToDtype(torch.float32, scale=True),
                     v2.Resize((224, 224), antialias=True),
                     v2.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD),
@@ -83,6 +83,7 @@ class ClickMeImageNetWrapperDataset(datasets.ImageNet):
         # Retrieve the image and label from the ImageNet dataset
         image, label = super().__getitem__(index)
 
+        image = F.pil_to_tensor(image)
         label = torch.from_numpy(label).unsqueeze(0)
 
         # Heatmap and token are placeholders
@@ -142,7 +143,6 @@ class ClickMeDataset(Dataset):
         # Define composed transforms for heatmap
         self.heatmap_transform = v2.Compose(
             [
-                v2.ToImage(),
                 v2.ToDtype(torch.float32, scale=True),
                 v2.Resize((64, 64), antialias=True),
                 v2.GaussianBlur(kernel_size=(7, 7), sigma=(7, 7)),
@@ -166,6 +166,7 @@ class ClickMeDataset(Dataset):
         heatmap = data["heatmap"]
 
         # Transform images
+        image = torch.from_numpy(image).permute((2, 0, 1)).contiguous()
         if self.transform is not None:
             image = self.transform(image)
 
