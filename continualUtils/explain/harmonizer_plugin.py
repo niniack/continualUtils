@@ -77,7 +77,7 @@ class NeuralHarmonizerPlugin(SupervisedPlugin):
 
         # NH is a heavy operation, should only be done for samples with heatmaps
         # Compute all indices with token set to 1
-        indices = torch.nonzero(strategy.mb_tokens, as_tuple=True)
+        indices = torch.nonzero(strategy.mb_tokens, as_tuple=True)[0]
 
         # Uses the `__call__` method
         # Send in the cloned input with gradients turned on
