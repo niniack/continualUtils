@@ -1,14 +1,21 @@
+import pdb
+
 import numpy as np
-from avalanche.benchmarks import SplitTinyImageNet
+import PIL
+from avalanche.benchmarks import AvalancheDataset, SplitTinyImageNet
 from avalanche.benchmarks.utils.data_loader import TaskBalancedDataLoader
-from avalanche.benchmarks.utils.ffcv_support import enable_ffcv
+from avalanche.benchmarks.utils.ffcv_support import (
+    HybridFfcvLoader,
+    enable_ffcv,
+)
 from torch.testing import assert_close
+from torch.utils.data.sampler import BatchSampler, SequentialSampler
 
 from continualUtils.benchmarks import SplitClickMe
-from continualUtils.benchmarks.datasets.preprocess import preprocess_input
 
 
 def test_load_splitimagenet(device, tmpdir):
+    """Test loading SplitImageNet with FFCV"""
     split_tiny_imagenet = SplitTinyImageNet(
         n_experiences=10, dataset_root="/mnt/datasets/tinyimagenet", seed=42
     )
@@ -22,33 +29,7 @@ def test_load_splitimagenet(device, tmpdir):
     )
 
 
-def test_normalize_np_image():
-    """Test normalizing a numpy image"""
-
-    # Create a 3D tensor
-    np_img = np.array(
-        [
-            [[255.0, 255.0, 255.0], [255.0, 255.0, 255.0]],
-            [[255.0, 255.0, 255.0], [255.0, 255.0, 255.0]],
-        ]
-    )
-
-    # Call the normalization function
-    normalized_img = preprocess_input(np_img)
-
-    # Define expectation
-    expected_img = np.array(
-        [
-            [[2.249, 2.429, 2.640], [2.249, 2.429, 2.640]],
-            [[2.249, 2.429, 2.640], [2.249, 2.429, 2.640]],
-        ]
-    )
-
-    # Assert that the output is as expected
-    assert_close(normalized_img, expected_img, rtol=1e-03, atol=1e-03)
-
-
-def test_load_splitclickme(logger, device, tmpdir):
+def test_load_splitclickme():
     """Test loading the SplitClickMe benchmark"""
 
     ds_root = "/mnt/datasets/clickme"
@@ -76,3 +57,55 @@ def test_load_splitclickme(logger, device, tmpdir):
     assert len(batch) is 5
 
     image, label, heatmap, token, task = batch
+
+
+def test_ffcv_clickme(device, tmpdir):
+    """Test loading the SplitClickMe benchmark"""
+    dataset_root = "/mnt/datasets/clickme"
+    batch_size = 16
+    num_workers = 2
+    # benchmark = SplitTinyImageNet(
+    #     n_experiences=10, dataset_root="/mnt/datasets/tinyimagenet", seed=42
+    # )
+    benchmark = SplitClickMe(
+        n_experiences=2,
+        root=dataset_root,
+        seed=79,
+        dummy=True,
+        return_task_id=True,
+        shuffle=True,
+        class_ids_from_zero_in_each_exp=True,
+        fixed_class_order=list(range(0, 1000)),
+    )
+
+    enable_ffcv(
+        benchmark=benchmark,
+        write_dir=f"{tmpdir}/ffcv_clickme",
+        device=device,
+        ffcv_parameters=dict(
+            num_workers=num_workers,
+            write_mode="proportion",
+            compress_probability=0.25,
+            jpeg_quality=90,
+        ),
+        force_overwrite=False,
+        print_summary=True,  # Better keep this true on non-benchmarking code
+    )
+
+    all_train_dataset = [x.dataset for x in benchmark.train_stream]
+    avl_set = AvalancheDataset(all_train_dataset)
+    avl_set = avl_set.train()
+
+    ffcv_loader = HybridFfcvLoader(
+        dataset=avl_set,
+        batch_sampler=BatchSampler(
+            SequentialSampler(avl_set),
+            batch_size=batch_size,
+            drop_last=True,
+        ),
+        ffcv_loader_parameters=dict(
+            num_workers=num_workers,
+        ),
+        device=device,
+        print_ffcv_summary=True,
+    )

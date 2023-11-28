@@ -13,11 +13,9 @@ from avalanche.benchmarks.scenarios import (
     StreamUserDef,
 )
 from avalanche.benchmarks.utils import AvalancheDataset
-from avalanche.benchmarks.utils.utils import concat_datasets
 
 from continualUtils.benchmarks.datasets.clickme import (
-    make_clickme_dataset,
-    make_clickme_style_imagenet_dataset,
+    make_combined_clickme_dataset,
 )
 
 
@@ -32,7 +30,6 @@ def SplitClickMe(  # pylint: disable=C0103
     train_transform: Optional[Any] = None,
     eval_transform: Optional[Any] = None,
     dummy: bool = False,
-    include_imagenet: bool = False,
 ) -> Union[NCScenario, DatasetScenario]:
     """Returns a split version of the ClickMe dataset
 
@@ -77,19 +74,19 @@ def SplitClickMe(  # pylint: disable=C0103
 
     # DEBUG for faster loading of the dataset
     if dummy:
-        clickme_train = make_clickme_dataset(root=root, split="dtrain")
-        clickme_test = make_clickme_dataset(root=root, split="dtest")
-
-        if include_imagenet:
-            imagenet_train = make_clickme_style_imagenet_dataset(
-                root="/mnt/datasets/fake_imagenet", split="train"
-            )
-            imagenet_test = make_clickme_style_imagenet_dataset(
-                root="/mnt/datasets/fake_imagenet", split="val"
-            )
-
-            clickme_train = concat_datasets([clickme_train, imagenet_train])
-            clickme_test = concat_datasets([clickme_test, imagenet_test])
+        clickme_train = make_combined_clickme_dataset(
+            imagenet_root="/mnt/datasets/fake_imagenet",
+            imagenet_split="train",
+            clickme_root=root,
+            clickme_split="dtrain",
+        )
+        # Imagenet split is val because we don't have the test split
+        clickme_test = make_combined_clickme_dataset(
+            imagenet_root="/mnt/datasets/fake_imagenet",
+            imagenet_split="val",
+            clickme_root=root,
+            clickme_split="dtest",
+        )
 
         return nc_benchmark(
             train_dataset=clickme_train,  # type: ignore
@@ -107,20 +104,27 @@ def SplitClickMe(  # pylint: disable=C0103
 
     # Actual benchmark
     else:
-        clickme_test = make_clickme_dataset(root=root, split="test")
-        clickme_train = make_clickme_dataset(root=root, split="train")
-        clickme_val = make_clickme_dataset(root=root, split="val")
+        clickme_train = make_combined_clickme_dataset(
+            imagenet_root="/imagenet",
+            imagenet_split="train",
+            clickme_root=root,
+            clickme_split="train",
+        )
+        #
+        clickme_val = make_combined_clickme_dataset(
+            imagenet_root=None,
+            imagenet_split=None,
+            clickme_root=root,
+            clickme_split="val",
+        )
+        # Imagenet split is val because we don't have the test split
+        clickme_test = make_combined_clickme_dataset(
+            imagenet_root="/imagenet",
+            imagenet_split="val",
+            clickme_root=root,
+            clickme_split="test",
+        )
 
-        if include_imagenet:
-            imagenet_train = make_clickme_style_imagenet_dataset(
-                root="/imagenet", split="train"
-            )
-            imagenet_test = make_clickme_style_imagenet_dataset(
-                root="/imagenet", split="val"
-            )
-
-            clickme_train = concat_datasets([clickme_train, imagenet_train])
-            clickme_test = concat_datasets([clickme_test, imagenet_test])
         # Make a benchmark with train stream
         benchmark_with_train = nc_benchmark(
             train_dataset=clickme_train,  # type: ignore
@@ -166,7 +170,7 @@ def SplitClickMe(  # pylint: disable=C0103
         # and create new one based on that
         benchmark_with_train_stream_definitions: Dict[
             str, StreamDef[AvalancheDataset]  # type: ignore
-        ] = benchmark_with_train.stream_definitions
+        ] = benchmark_with_train.stream_definitions  # type: ignore
 
         new_stream_definitions: Dict[
             str, Union[StreamUserDef[AvalancheDataset], StreamDef[AvalancheDataset]]  # type: ignore
@@ -176,7 +180,7 @@ def SplitClickMe(  # pylint: disable=C0103
         # and use it to grab task_labels
         benchmark_with_val_stream_definitions: Dict[
             str, StreamDef[AvalancheDataset]  # type: ignore
-        ] = benchmark_with_val.stream_definitions
+        ] = benchmark_with_val.stream_definitions  # type: ignore
 
         val_exps_tasks_labels = list(
             benchmark_with_val_stream_definitions[

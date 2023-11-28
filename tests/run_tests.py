@@ -26,7 +26,7 @@ def main():
     # Construct the argument for pytest.main by combining the absolute path of the test file
     # with the test name specifier, if it was provided.
     pytest_args = [str(test_file_path)]
-    # pytest_args.append("-s")  # Verbose output
+    pytest_args.append("-s")  # Print output
     if len(parts) > 1:
         pytest_args[0] += "::" + parts[1]
 
