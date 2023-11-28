@@ -80,6 +80,17 @@ def SplitClickMe(  # pylint: disable=C0103
         clickme_train = make_clickme_dataset(root=root, split="dtrain")
         clickme_test = make_clickme_dataset(root=root, split="dtest")
 
+        if include_imagenet:
+            imagenet_train = make_clickme_style_imagenet_dataset(
+                root="/mnt/datasets/fake_imagenet", split="train"
+            )
+            imagenet_test = make_clickme_style_imagenet_dataset(
+                root="/mnt/datasets/fake_imagenet", split="val"
+            )
+
+            clickme_train = concat_datasets([clickme_train, imagenet_train])
+            clickme_test = concat_datasets([clickme_test, imagenet_test])
+
         return nc_benchmark(
             train_dataset=clickme_train,  # type: ignore
             test_dataset=clickme_test,  # type: ignore
