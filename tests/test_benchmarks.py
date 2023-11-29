@@ -1,15 +1,19 @@
 import pdb
 
-import numpy as np
-import PIL
+import ffcv
+import torch
+import torchvision.transforms as tv_transforms
 from avalanche.benchmarks import AvalancheDataset, SplitTinyImageNet
 from avalanche.benchmarks.utils.data_loader import TaskBalancedDataLoader
 from avalanche.benchmarks.utils.ffcv_support import (
     HybridFfcvLoader,
     enable_ffcv,
 )
-from torch.testing import assert_close
+from avalanche.benchmarks.utils.ffcv_support.ffcv_transform_utils import (
+    SmartModuleWrapper,
+)
 from torch.utils.data.sampler import BatchSampler, SequentialSampler
+from tqdm import tqdm
 
 from continualUtils.benchmarks import SplitClickMe
 
@@ -62,8 +66,9 @@ def test_load_splitclickme():
 def test_ffcv_clickme(device, tmpdir):
     """Test loading the SplitClickMe benchmark"""
     dataset_root = "/mnt/datasets/clickme"
+    epochs = 5
     batch_size = 16
-    num_workers = 2
+    num_workers = 16
     # benchmark = SplitTinyImageNet(
     #     n_experiences=10, dataset_root="/mnt/datasets/tinyimagenet", seed=42
     # )
@@ -78,6 +83,33 @@ def test_ffcv_clickme(device, tmpdir):
         fixed_class_order=list(range(0, 1000)),
     )
 
+    custom_decoder_pipeline = {
+        "field_0": [
+            ffcv.fields.rgb_image.SimpleRGBImageDecoder(),
+            # ffcv.fields.rgb_image.RandomResizedCropRGBImageDecoder((224, 224))
+        ],
+        "field_1": [
+            ffcv.fields.basics.IntDecoder(),
+            ffcv.transforms.ToTensor(),
+        ],
+        "field_2": [
+            ffcv.fields.ndarray.NDArrayDecoder(),
+            ffcv.transforms.ToTensor(),
+            SmartModuleWrapper(tv_transforms.Resize((64, 64), antialias=True)),
+            SmartModuleWrapper(
+                tv_transforms.GaussianBlur(kernel_size=(7, 7), sigma=(7, 7))
+            ),
+            SmartModuleWrapper(
+                tv_transforms.Resize((224, 224), antialias=True)
+            ),
+            # ffcv.transforms.ToTorchImage(),
+        ],
+        "field_3": [
+            ffcv.fields.basics.IntDecoder(),
+            ffcv.transforms.ToTensor(),
+        ],
+    }
+
     enable_ffcv(
         benchmark=benchmark,
         write_dir=f"{tmpdir}/ffcv_clickme",
@@ -86,10 +118,13 @@ def test_ffcv_clickme(device, tmpdir):
             num_workers=num_workers,
             write_mode="proportion",
             compress_probability=0.25,
+            max_resolution=256,
             jpeg_quality=90,
         ),
-        force_overwrite=False,
-        print_summary=True,  # Better keep this true on non-benchmarking code
+        decoder_def=custom_decoder_pipeline,
+        decoder_includes_transformations=False,
+        force_overwrite=True,
+        print_summary=False,  # Better keep this true on non-benchmarking code
     )
 
     all_train_dataset = [x.dataset for x in benchmark.train_stream]
@@ -107,5 +142,12 @@ def test_ffcv_clickme(device, tmpdir):
             num_workers=num_workers,
         ),
         device=device,
+        persistent_workers=True,
         print_ffcv_summary=True,
     )
+
+    for _ in tqdm(range(epochs)):
+        for batch in tqdm(ffcv_loader):
+            # "Touch" tensors to make sure they already moved to GPU
+            batch[0][0]
+            batch[-1][0]

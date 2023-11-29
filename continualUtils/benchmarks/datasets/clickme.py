@@ -103,13 +103,19 @@ class CombinedClickMeDataset(Dataset):
                 "Imagenet split is given, but no root was provided!"
             )
 
-        # Force the same transforms
+        # Force the same transforms on both datasets
+        # ToTensor() necessarily implies a move to device (from testing)
+        # But, flip must occur before that
         if transform is None:
+            # Avalanche will automatically swap out
+            # ffcv SimpleRGBImageDecoder + tv RandomResizedCrop
+            # for ffcv RandomResizedCropRGBImageDecoder
+            # as an optimization
             self.transform = tv_transforms.Compose(
                 [
-                    tv_transforms.ToTensor(),
+                    tv_transforms.RandomResizedCrop((224, 224), antialias=True),
                     tv_transforms.RandomHorizontalFlip(p=0.5),
-                    tv_transforms.Resize((224, 224), antialias=True),
+                    tv_transforms.ToTensor(),
                     tv_transforms.Normalize(
                         mean=IMAGENET_MEAN, std=IMAGENET_STD
                     ),
@@ -222,11 +228,11 @@ class ClickMeImageNetWrapperDataset(datasets.ImageNet):
 
         # If no transform is provided, define the default
         if transform is None:
-            transform = tv_transforms.Compose(
+            tv_transforms.Compose(
                 [
-                    tv_transforms.ToTensor(),
+                    tv_transforms.RandomResizedCrop((224, 224), antialias=True),
                     tv_transforms.RandomHorizontalFlip(p=0.5),
-                    tv_transforms.Resize((224, 224), antialias=True),
+                    tv_transforms.ToTensor(),
                     tv_transforms.Normalize(
                         mean=IMAGENET_MEAN, std=IMAGENET_STD
                     ),
@@ -294,9 +300,9 @@ class ClickMeDataset(Dataset):
         self.transform = (
             tv_transforms.Compose(
                 [
-                    tv_transforms.ToTensor(),
+                    tv_transforms.RandomResizedCrop((224, 224), antialias=True),
                     tv_transforms.RandomHorizontalFlip(p=0.5),
-                    tv_transforms.Resize((224, 224), antialias=True),
+                    tv_transforms.ToTensor(),
                     tv_transforms.Normalize(
                         mean=IMAGENET_MEAN, std=IMAGENET_STD
                     ),
@@ -331,22 +337,24 @@ class ClickMeDataset(Dataset):
         label = data["label"]
         heatmap = data["heatmap"]
 
-        # Hardcode to PIL
+        # Hardcode np image to PIL
         image = Image.fromarray(image.astype("uint8"), "RGB")
+
         # Transform images
         if self.apply_transform and self.transform is not None:
             image = self.transform(image)
 
-        # Apply any transformations to labels
+        # Transform labels
         label = int(label)
         if self.apply_transform and self.target_transform is not None:
             label = self.target_transform(label)
 
-        # Process heatmap
+        # Expand heatmap and transform
         heatmap = heatmap[..., np.newaxis]
         if self.apply_transform and self.heatmap_transform is not None:
             heatmap = self.heatmap_transform(heatmap)
 
+        # Instantiate token
         token = int(1)
 
         return image, label, heatmap, token
