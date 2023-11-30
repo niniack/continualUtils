@@ -83,32 +83,35 @@ def test_ffcv_clickme(device, tmpdir):
         fixed_class_order=list(range(0, 1000)),
     )
 
-    custom_decoder_pipeline = {
-        "field_0": [
-            ffcv.fields.rgb_image.SimpleRGBImageDecoder(),
-            # ffcv.fields.rgb_image.RandomResizedCropRGBImageDecoder((224, 224))
-        ],
-        "field_1": [
-            ffcv.fields.basics.IntDecoder(),
-            ffcv.transforms.ToTensor(),
-        ],
-        "field_2": [
-            ffcv.fields.ndarray.NDArrayDecoder(),
-            ffcv.transforms.ToTensor(),
-            SmartModuleWrapper(tv_transforms.Resize((64, 64), antialias=True)),
-            SmartModuleWrapper(
-                tv_transforms.GaussianBlur(kernel_size=(7, 7), sigma=(7, 7))
-            ),
-            SmartModuleWrapper(
-                tv_transforms.Resize((224, 224), antialias=True)
-            ),
-            # ffcv.transforms.ToTorchImage(),
-        ],
-        "field_3": [
-            ffcv.fields.basics.IntDecoder(),
-            ffcv.transforms.ToTensor(),
-        ],
-    }
+    # custom_decoder_pipeline = {
+    #     "field_0": [
+    #         ffcv.fields.rgb_image.SimpleRGBImageDecoder(),
+    #         # ffcv.fields.rgb_image.RandomResizedCropRGBImageDecoder((224, 224))
+    #     ],
+    #     "field_1": [
+    #         ffcv.fields.basics.IntDecoder(),
+    #         ffcv.transforms.ToTensor(),
+    #     ],
+    #     "field_2": [
+    #         ffcv.fields.ndarray.NDArrayDecoder(),
+    #         ffcv.transforms.ToTensor(),
+    #         # ffcv.transforms.ToTorchImage(),
+    #         # SmartModuleWrapper(tv_transforms.Resize((64, 64), antialias=True)),
+    #         # SmartModuleWrapper(
+    #         #     tv_transforms.GaussianBlur(kernel_size=(7, 7), sigma=(7, 7))
+    #         # ),
+    #         # SmartModuleWrapper(
+    #         #     tv_transforms.Resize((224, 224), antialias=True)
+    #         # ),
+    #         # ffcv.transforms.ToDevice(device),
+    #     ],
+    #     "field_3": [
+    #         ffcv.fields.basics.IntDecoder(),
+    #         ffcv.transforms.ToTensor(),
+    #     ],
+    # }
+
+    custom_decoder_pipeline = None
 
     enable_ffcv(
         benchmark=benchmark,
@@ -124,7 +127,7 @@ def test_ffcv_clickme(device, tmpdir):
         decoder_def=custom_decoder_pipeline,
         decoder_includes_transformations=False,
         force_overwrite=True,
-        print_summary=False,  # Better keep this true on non-benchmarking code
+        print_summary=True,  # Better keep this true on non-benchmarking code
     )
 
     all_train_dataset = [x.dataset for x in benchmark.train_stream]
@@ -151,3 +154,4 @@ def test_ffcv_clickme(device, tmpdir):
             # "Touch" tensors to make sure they already moved to GPU
             batch[0][0]
             batch[-1][0]
+            pdb.set_trace()
