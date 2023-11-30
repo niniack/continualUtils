@@ -154,4 +154,3 @@ def test_ffcv_clickme(device, tmpdir):
             # "Touch" tensors to make sure they already moved to GPU
             batch[0][0]
             batch[-1][0]
-            pdb.set_trace()
