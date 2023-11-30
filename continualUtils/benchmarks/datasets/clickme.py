@@ -228,7 +228,7 @@ class ClickMeImageNetWrapperDataset(datasets.ImageNet):
 
         # If no transform is provided, define the default
         if transform is None:
-            tv_transforms.Compose(
+            transform = tv_transforms.Compose(
                 [
                     tv_transforms.RandomResizedCrop((224, 224), antialias=True),
                     tv_transforms.RandomHorizontalFlip(p=0.5),
@@ -247,17 +247,19 @@ class ClickMeImageNetWrapperDataset(datasets.ImageNet):
             **kwargs,
         )
 
+        # Pre-allocate a static heatmap
+        self.static_heatmap = np.empty((256, 256, 1), dtype=np.float32)
+
     def __getitem__(self, index: int):
         # Retrieve the image and label from the ImageNet dataset
         image, label = super().__getitem__(index)
 
         # Transforms will be automatically applied by the parent class
 
-        # Heatmap and token are placeholders
-        heatmap = np.empty((256, 256, 1), dtype=np.float32)
+        # Return the shared static heatmap and a placeholder token
         token = int(0)
 
-        return image, label, heatmap, token
+        return image, label, self.static_heatmap, token
 
 
 class ClickMeDataset(Dataset):
