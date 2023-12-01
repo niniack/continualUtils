@@ -42,7 +42,7 @@ def test_multihead(device, split_tiny_imagenet):
 
 
 def test_patch_batch_norm(device):
-    """Test initialization of CustomResNet50"""
+    """Test patching BatchNorm with GroupNorm in CustomResNet50."""
     # Constants
     num_classes = 10
 
@@ -50,20 +50,26 @@ def test_patch_batch_norm(device):
     model = CustomResNet50(
         device=device,
         num_classes_total=num_classes,
-        patch_batch_norm=False,
+        patch_batch_norm=True,  # Enable patching
     )
+
+    # Apply the patch
+    model._patch_batch_norm()
 
     # Check if model.model is an instance of torch.nn.Module
     assert isinstance(
         model.model, torch.nn.Module
     ), "model.model is not an instance of torch.nn.Module!"
 
-    # Check for batch normalization layers using running statistics
+    # Check for the presence of GroupNorm layers and absence of BatchNorm layers
+    has_group_norm = False
     for layer in model.model.modules():
-        if isinstance(layer, torch.nn.modules.batchnorm._BatchNorm):
-            assert (
-                layer.track_running_stats
-            ), "BatchNorm layer does not use running statistics!"
+        if isinstance(layer, nn.GroupNorm):
+            has_group_norm = True
+        if isinstance(layer, nn.modules.batchnorm._BatchNorm):
+            assert False, "BatchNorm layer found after patching!"
+
+    assert has_group_norm, "No GroupNorm layer found after patching!"
 
 
 def test_model_weight_init(device):

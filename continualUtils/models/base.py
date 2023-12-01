@@ -88,9 +88,6 @@ class BaseModel(ABC, MultiTaskModule, DynamicModule):
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
 
-    def _patch_batch_norm(self):
-        replace_all_batch_norm_modules_(self._model)
-
     def toggle_hidden(self, output_hidden):
         """Set whether model outputs hidden layers
 
@@ -168,6 +165,10 @@ class BaseModel(ABC, MultiTaskModule, DynamicModule):
     def get_hidden_layer(self, *args, **kwargs):
         pass
 
+    @abstractmethod
+    def _patch_batch_norm(self):
+        pass
+
 
 class HuggingFaceResNet(BaseModel):
     def _save_weights_impl(self, dir_name):
@@ -231,3 +232,26 @@ class HuggingFaceResNet(BaseModel):
             return classifier_out, out.hidden_states
         else:
             return classifier_out
+
+    def _patch_batch_norm(self):
+        """
+        Replace all BatchNorm modules in the model with GroupNorm.
+        """
+
+        def replace_with_groupnorm(module):
+            """
+            Recursively replace BatchNorm modules with GroupNorm in the given module.
+            """
+            for child_name, child_module in module.named_children():
+                if isinstance(child_module, nn.BatchNorm2d):
+                    # Setting num_groups=32 and num_channels=child_module.num_features
+                    setattr(
+                        module,
+                        child_name,
+                        nn.GroupNorm(32, child_module.num_features),
+                    )
+                else:
+                    replace_with_groupnorm(child_module)
+
+        # Apply the replacement function to the model
+        replace_with_groupnorm(self._model)
