@@ -58,6 +58,7 @@ class CustomResNet50(HuggingFaceResNet):
         output_hidden: bool = False,
         multihead: bool = False,
         seed: int = 42,
+        **kwargs
     ):
         """
         Returns:
@@ -88,6 +89,7 @@ class CustomResNet50(HuggingFaceResNet):
             num_classes_total=num_classes_total,
             num_classes_per_head=num_classes_per_head,
             init_weights=True,
+            **kwargs
         )
 
         self._model = _model

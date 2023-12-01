@@ -41,6 +41,31 @@ def test_multihead(device, split_tiny_imagenet):
     assert isinstance(output, Tensor)
 
 
+def test_patch_batch_norm(device):
+    """Test initialization of CustomResNet50"""
+    # Constants
+    num_classes = 10
+
+    # Initialize model
+    model = CustomResNet50(
+        device=device,
+        num_classes_total=num_classes,
+        patch_batch_norm=False,
+    )
+
+    # Check if model.model is an instance of torch.nn.Module
+    assert isinstance(
+        model.model, torch.nn.Module
+    ), "model.model is not an instance of torch.nn.Module!"
+
+    # Check for batch normalization layers using running statistics
+    for layer in model.model.modules():
+        if isinstance(layer, torch.nn.modules.batchnorm._BatchNorm):
+            assert (
+                layer.track_running_stats
+            ), "BatchNorm layer does not use running statistics!"
+
+
 def test_model_weight_init(device):
     """Test initialization of CustomResNet50"""
     # Constants
