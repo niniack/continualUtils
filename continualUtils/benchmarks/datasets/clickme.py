@@ -113,7 +113,7 @@ class CombinedClickMeDataset(Dataset):
             # as an optimization
             self.transform = tv_transforms.Compose(
                 [
-                    tv_transforms.RandomResizedCrop((224, 224), antialias=True),
+                    # tv_transforms.RandomResizedCrop((224, 224), antialias=True),
                     tv_transforms.RandomHorizontalFlip(p=0.5),
                     tv_transforms.ToTensor(),
                     tv_transforms.Normalize(
@@ -197,6 +197,11 @@ class CombinedClickMeDataset(Dataset):
             sample_index
         ]
 
+        # NOTE: We force a resize to 224 to avoid using random resized crop
+        image = tv_transforms.functional.resize(
+            image, (224, 224), antialias=True
+        )
+
         # Transform images
         if self.transform is not None:
             image = self.transform(image)
@@ -204,6 +209,12 @@ class CombinedClickMeDataset(Dataset):
         # Apply any transformations to labels
         if self.target_transform is not None:
             label = self.target_transform(label)
+
+        # NOTE: Avalanche will yank transform and target_transform
+        # in favor of the FFCV decode pipeline it generates.
+        # However, heatmap_transform will remain because Avalanche is unaware of it.
+        # This means dataset will be stored with heatmap transforms.
+        # Don't double apply them.
 
         # Process heatmap
         if self.heatmap_transform is not None:
@@ -254,7 +265,7 @@ class ClickMeImageNetWrapperDataset(datasets.ImageNet):
         # Retrieve the image and label from the ImageNet dataset
         image, label = super().__getitem__(index)
 
-        # Transforms will be automatically applied by the parent class
+        # NOTE: Transforms will be automatically applied by the parent class
 
         # Return the shared static heatmap and a placeholder token
         token = int(0)
@@ -302,7 +313,7 @@ class ClickMeDataset(Dataset):
         self.transform = (
             tv_transforms.Compose(
                 [
-                    tv_transforms.RandomResizedCrop((224, 224), antialias=True),
+                    # tv_transforms.RandomResizedCrop((224, 224), antialias=True),
                     tv_transforms.RandomHorizontalFlip(p=0.5),
                     tv_transforms.ToTensor(),
                     tv_transforms.Normalize(

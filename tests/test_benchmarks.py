@@ -83,35 +83,38 @@ def test_ffcv_clickme(device, tmpdir):
         fixed_class_order=list(range(0, 1000)),
     )
 
-    # custom_decoder_pipeline = {
-    #     "field_0": [
-    #         ffcv.fields.rgb_image.SimpleRGBImageDecoder(),
-    #         # ffcv.fields.rgb_image.RandomResizedCropRGBImageDecoder((224, 224))
-    #     ],
-    #     "field_1": [
-    #         ffcv.fields.basics.IntDecoder(),
-    #         ffcv.transforms.ToTensor(),
-    #     ],
-    #     "field_2": [
-    #         ffcv.fields.ndarray.NDArrayDecoder(),
-    #         ffcv.transforms.ToTensor(),
-    #         # ffcv.transforms.ToTorchImage(),
-    #         # SmartModuleWrapper(tv_transforms.Resize((64, 64), antialias=True)),
-    #         # SmartModuleWrapper(
-    #         #     tv_transforms.GaussianBlur(kernel_size=(7, 7), sigma=(7, 7))
-    #         # ),
-    #         # SmartModuleWrapper(
-    #         #     tv_transforms.Resize((224, 224), antialias=True)
-    #         # ),
-    #         # ffcv.transforms.ToDevice(device),
-    #     ],
-    #     "field_3": [
-    #         ffcv.fields.basics.IntDecoder(),
-    #         ffcv.transforms.ToTensor(),
-    #     ],
-    # }
+    custom_decoder_pipeline = {
+        "field_0": [
+            ffcv.fields.rgb_image.SimpleRGBImageDecoder(),
+            # ffcv.transforms.ImageMixup(0.5, False),
+            # ffcv.fields.rgb_image.RandomResizedCropRGBImageDecoder((224, 224))
+        ],
+        "field_1": [
+            ffcv.fields.basics.IntDecoder(),
+            # ffcv.transforms.LabelMixup(0.5, False),
+            ffcv.transforms.ToTensor(),
+        ],
+        "field_2": [
+            ffcv.fields.ndarray.NDArrayDecoder(),
+            ffcv.transforms.RandomHorizontalFlip(0.5),
+            ffcv.transforms.ToTensor(),
+            # ffcv.transforms.ToTorchImage(),
+            # SmartModuleWrapper(tv_transforms.Resize((64, 64), antialias=True)),
+            # SmartModuleWrapper(
+            #     tv_transforms.GaussianBlur(kernel_size=(7, 7), sigma=(7, 7))
+            # ),
+            # SmartModuleWrapper(
+            #     tv_transforms.Resize((224, 224), antialias=True)
+            # ),
+            # ffcv.transforms.ToDevice(device),
+        ],
+        "field_3": [
+            ffcv.fields.basics.IntDecoder(),
+            ffcv.transforms.ToTensor(),
+        ],
+    }
 
-    custom_decoder_pipeline = None
+    # custom_decoder_pipeline = None
 
     enable_ffcv(
         benchmark=benchmark,
