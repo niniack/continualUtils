@@ -31,6 +31,7 @@ class BaseModel(ABC, MultiTaskModule, DynamicModule):
         num_classes_total: int,
         num_classes_per_head: Optional[int] = None,
         init_weights: bool = False,
+        patch_batch_norm: bool = True,
     ):
         super().__init__()
         self.seed = seed
@@ -42,6 +43,7 @@ class BaseModel(ABC, MultiTaskModule, DynamicModule):
         self.num_classes_total = num_classes_total
         self.num_classes_per_head = num_classes_per_head
         self.init_weights = init_weights
+        self.patch_batch_norm = patch_batch_norm
 
         # Set seed for reproducibility
         torch.manual_seed(seed)
@@ -68,7 +70,9 @@ class BaseModel(ABC, MultiTaskModule, DynamicModule):
 
         # Update the module in-place to not use running stats
         # https://pytorch.org/functorch/stable/batch_norm.html
-        self._patch_batch_norm()
+        # NOTE: Be careful with this, saliency maps require the patch
+        if self.patch_batch_norm:
+            self._patch_batch_norm()
 
         self._freeze_backbone: bool = False
 
