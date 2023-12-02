@@ -255,3 +255,6 @@ class HuggingFaceResNet(BaseModel):
 
         # Apply the replacement function to the model
         replace_with_groupnorm(self._model)
+
+        # Move to device
+        self._model.to(self.device)
