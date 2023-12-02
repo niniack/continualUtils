@@ -1,6 +1,7 @@
 import torch
 import torch.nn.functional as F
 from torch import Tensor, nn
+from torch.nn.utils.parametrize import is_parametrized
 
 from continualUtils.models import CustomResNet50, PretrainedResNet50
 
@@ -68,6 +69,8 @@ def test_patch_batch_norm(device):
             has_group_norm = True
         if isinstance(layer, nn.modules.batchnorm._BatchNorm):
             assert False, "BatchNorm layer found after patching!"
+        if isinstance(layer, nn.Conv2d):
+            assert is_parametrized(layer)
 
     assert has_group_norm, "No GroupNorm layer found after patching!"
 

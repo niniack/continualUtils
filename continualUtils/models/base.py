@@ -11,6 +11,7 @@ from avalanche.models import DynamicModule, MultiHeadClassifier, MultiTaskModule
 from avalanche.models.utils import avalanche_forward
 from functorch.experimental import replace_all_batch_norm_modules_
 from torch import nn
+from torch.nn.utils import parametrizations
 
 
 class MissingTasksException(Exception):
@@ -235,26 +236,31 @@ class HuggingFaceResNet(BaseModel):
 
     def _patch_batch_norm(self):
         """
-        Replace all BatchNorm modules in the model with GroupNorm.
+        Replace all BatchNorm modules with GroupNorm and
+        apply weight normalization to all Conv2d layers.
         """
 
-        def replace_with_groupnorm(module):
-            """
-            Recursively replace BatchNorm modules with GroupNorm in the given module.
-            """
+        def replace_bn_and_apply_wn(module):
             for child_name, child_module in module.named_children():
                 if isinstance(child_module, nn.BatchNorm2d):
-                    # Setting num_groups=32 and num_channels=child_module.num_features
                     setattr(
                         module,
                         child_name,
                         nn.GroupNorm(32, child_module.num_features),
                     )
+                elif isinstance(child_module, nn.Conv2d):
+                    setattr(
+                        module,
+                        child_name,
+                        parametrizations.weight_norm(
+                            child_module, name="weight"
+                        ),
+                    )
                 else:
-                    replace_with_groupnorm(child_module)
+                    replace_bn_and_apply_wn(child_module)
 
-        # Apply the replacement function to the model
-        replace_with_groupnorm(self._model)
+        # Apply the combined replacement and weight normalization function to the model
+        replace_bn_and_apply_wn(self._model)
 
         # Move to device
         self._model.to(self.device)
