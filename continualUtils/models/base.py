@@ -180,7 +180,9 @@ class HuggingFaceResNet(BaseModel):
                 os.makedirs(dir_name)
 
             # Save the model
-            self._model.save_pretrained(dir_name)
+            self._model.save_pretrained(
+                dir_name, state_dict=self._model.state_dict()
+            )
             print(f"Model saved in directory: {dir_name}")
         else:
             print(
@@ -189,10 +191,16 @@ class HuggingFaceResNet(BaseModel):
 
     def _load_weights_impl(self, dir_name):
         print(f"Loading from {dir_name}")
-        # Load model
-        self._model = self._model.from_pretrained(
-            dir_name, local_files_only=True
-        )
+
+        # Load the saved state_dict
+        state_dict = torch.load(os.path.join(dir_name, "pytorch_model.bin"))
+
+        # Load the state_dict into the existing model architecture
+        # You may use strict=False if you expect some mismatch in keys,
+        # but be cautious as it might lead to missing or unexpected parameters
+        self._model.load_state_dict(state_dict, strict=True)
+
+        # Move the model to the desired device
         self._model = self._model.to(self.device)
 
     def freeze_backbone(self, flag: bool):
@@ -240,27 +248,21 @@ class HuggingFaceResNet(BaseModel):
         apply weight normalization to all Conv2d layers.
         """
 
-        def replace_bn_and_apply_wn(module):
+        def replace_bn_with_gn(module, module_path=""):
             for child_name, child_module in module.named_children():
-                if isinstance(child_module, nn.BatchNorm2d):
-                    setattr(
-                        module,
-                        child_name,
-                        nn.GroupNorm(32, child_module.num_features),
-                    )
-                elif isinstance(child_module, nn.Conv2d):
-                    setattr(
-                        module,
-                        child_name,
-                        parametrizations.weight_norm(
-                            child_module, name="weight"
-                        ),
-                    )
-                else:
-                    replace_bn_and_apply_wn(child_module)
+                child_path = (
+                    f"{module_path}.{child_name}" if module_path else child_name
+                )
 
-        # Apply the combined replacement and weight normalization function to the model
-        replace_bn_and_apply_wn(self._model)
+                if isinstance(child_module, nn.BatchNorm2d):
+                    new_groupnorm = nn.GroupNorm(32, child_module.num_features)
+                    setattr(module, child_name, new_groupnorm)
+
+                else:
+                    replace_bn_with_gn(child_module, child_path)
+
+        # Apply the replacement function to the model
+        replace_bn_with_gn(self._model)
 
         # Move to device
         self._model.to(self.device)
