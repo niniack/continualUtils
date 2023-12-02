@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import List, Optional, Union
 
+import safetensors
 import torch
 import torch.backends.cudnn
 from avalanche.benchmarks import NCExperience
@@ -192,12 +193,17 @@ class HuggingFaceResNet(BaseModel):
     def _load_weights_impl(self, dir_name):
         print(f"Loading from {dir_name}")
 
-        # Load the saved state_dict
-        state_dict = torch.load(os.path.join(dir_name, "pytorch_model.bin"))
+        # Construct the path to the .safetensors file
+        file_path = os.path.join(dir_name, "model.safetensors")
+
+        # Check if the .safetensors file exists
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"The file {file_path} does not exist.")
+
+        # Load the model state dictionary using safeTensors
+        state_dict = safetensors.torch.load_file(file_path)
 
         # Load the state_dict into the existing model architecture
-        # You may use strict=False if you expect some mismatch in keys,
-        # but be cautious as it might lead to missing or unexpected parameters
         self._model.load_state_dict(state_dict, strict=True)
 
         # Move the model to the desired device

@@ -14,9 +14,30 @@ def test_save_load(device, tmpdir):
         multihead=True,
         patch_batch_norm=True,
     )
+
+    pre_state_dict = model.state_dict()
+
     model.save_weights(f"{tmpdir}/model")
 
     model.load_weights(f"{tmpdir}/model")
+
+    post_state_dict = model.state_dict()
+
+    # Function to compare two state dictionaries
+    def compare_state_dicts(dict1, dict2):
+        for key in dict1:
+            if key not in dict2:
+                return False
+            if torch.is_tensor(dict1[key]) and torch.is_tensor(dict2[key]):
+                if not torch.equal(dict1[key], dict2[key]):
+                    return False
+            else:
+                if dict1[key] != dict2[key]:
+                    return False
+        return True
+
+    # Assert that the two state dictionaries are the same
+    assert compare_state_dicts(pre_state_dict, post_state_dict)
 
 
 def test_multihead(device, split_tiny_imagenet):
