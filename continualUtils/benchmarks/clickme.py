@@ -109,7 +109,7 @@ def SplitClickMe(  # pylint: disable=C0103
     else:
         clickme_train = make_combined_clickme_dataset(
             imagenet_root="/imagenet" if include_imagenet else None,
-            imagenet_split="train",
+            imagenet_split="train" if include_imagenet else None,
             clickme_root=root,
             clickme_split="train",
         )
@@ -123,7 +123,7 @@ def SplitClickMe(  # pylint: disable=C0103
         # Imagenet split is val because we don't have the test split
         clickme_test = make_combined_clickme_dataset(
             imagenet_root="/imagenet" if include_imagenet else None,
-            imagenet_split="val",
+            imagenet_split="val" if include_imagenet else None,
             clickme_root=root,
             clickme_split="test",
         )
