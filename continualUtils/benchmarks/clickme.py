@@ -30,6 +30,7 @@ def SplitClickMe(  # pylint: disable=C0103
     train_transform: Optional[Any] = None,
     eval_transform: Optional[Any] = None,
     dummy: bool = False,
+    include_imagenet: bool = True,
 ) -> Union[NCScenario, DatasetScenario]:
     """Returns a split version of the ClickMe dataset
 
@@ -69,6 +70,8 @@ def SplitClickMe(  # pylint: disable=C0103
         comprehensive list of possible transformations). Defaults to None.
     :param dummy: If True, the scenario will be a reduced version for testing
         and debugging purposes, defaults to False
+    :param include_imagenet: If True, the scenario will include the Imagenet
+        directory
     :return: A properly initialized :class:`NCScenario` instance.
     """
 
@@ -105,7 +108,7 @@ def SplitClickMe(  # pylint: disable=C0103
     # Actual benchmark
     else:
         clickme_train = make_combined_clickme_dataset(
-            imagenet_root="/imagenet",
+            imagenet_root="/imagenet" if include_imagenet else None,
             imagenet_split="train",
             clickme_root=root,
             clickme_split="train",
@@ -119,7 +122,7 @@ def SplitClickMe(  # pylint: disable=C0103
         )
         # Imagenet split is val because we don't have the test split
         clickme_test = make_combined_clickme_dataset(
-            imagenet_root="/imagenet",
+            imagenet_root="/imagenet" if include_imagenet else None,
             imagenet_split="val",
             clickme_root=root,
             clickme_split="test",
