@@ -84,13 +84,19 @@ class HarmonizerPluginMetric(GenericPluginMetric[float, HarmonizerLossMetric]):
         self._metric.reset()
 
     def result(self) -> float:
-        return self._metric.result()
+        try:
+            return self._metric.result()
+        except Exception:
+            return None
 
     def update(self, strategy):
-        self._metric.update(
-            harmonizer_loss=strategy.harmonizer_loss,  # type: ignore
-            patterns=len(strategy.mb_y),
-        )
+        try:
+            self._metric.update(
+                harmonizer_loss=strategy.harmonizer_loss,  # type: ignore
+                patterns=len(strategy.mb_y),
+            )
+        except Exception:
+            pass
 
 
 class MinibatchHarmonizerLoss(HarmonizerPluginMetric):

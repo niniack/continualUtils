@@ -61,9 +61,12 @@ class SaliencyMapSamplePlugin(PluginMetric):
         if self.mode == "train" or self.mode == "both":
             results = []
             for exp in range(strategy.experience.current_experience + 1):
-                result = self._make_grid_sample(strategy, exp)
-                if result:
-                    results.extend(result)
+                try:
+                    result = self._make_grid_sample(strategy, exp)
+                    if result:
+                        results.extend(result)
+                except Exception:
+                    pass
 
             return results
         return None
