@@ -10,11 +10,7 @@ packages = [{include = "continualUtils"}]
 [tool.poetry.dependencies]
 python = ">=3.8,<3.11"
 avalanche-lib = { git = "https://github.com/ContinualAI/avalanche", rev = "12f37f8"}
-ffcv = "*"
-cupy-cuda11x = "*"
 transformers = "^4.35"
-numba = "*"
-tbb = "*"
 
 [tool.poetry.group.docker]
 optional = true
@@ -24,6 +20,10 @@ torch = {version = ">=2.1.0", source = "torch"}
 torchvision = {version = "*", source = "torch"}
 torchaudio = {version = "*", source = "torch"}
 pylint = "^3.0.0"
+ffcv = "*"
+cupy-cuda11x = "*"
+numba = "*"
+tbb = "*"
 
 [tool.poetry.group.test]
 optional = true
