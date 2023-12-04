@@ -112,7 +112,7 @@ class CombinedClickMeDataset(Dataset):
             self.transform = tv_transforms.Compose(
                 [
                     # tv_transforms.RandomResizedCrop((224, 224), antialias=True),
-                    tv_transforms.RandomHorizontalFlip(p=0.5),
+                    # tv_transforms.RandomHorizontalFlip(p=0.5),
                     tv_transforms.ToTensor(),
                     tv_transforms.Normalize(
                         mean=IMAGENET_MEAN, std=IMAGENET_STD
@@ -239,8 +239,8 @@ class ClickMeImageNetWrapperDataset(datasets.ImageNet):
         if transform is None:
             transform = tv_transforms.Compose(
                 [
-                    tv_transforms.RandomResizedCrop((224, 224), antialias=True),
-                    tv_transforms.RandomHorizontalFlip(p=0.5),
+                    # tv_transforms.RandomResizedCrop((224, 224), antialias=True),
+                    # tv_transforms.RandomHorizontalFlip(p=0.5),
                     tv_transforms.ToTensor(),
                     tv_transforms.Normalize(
                         mean=IMAGENET_MEAN, std=IMAGENET_STD
@@ -312,7 +312,7 @@ class ClickMeDataset(Dataset):
             tv_transforms.Compose(
                 [
                     # tv_transforms.RandomResizedCrop((224, 224), antialias=True),
-                    tv_transforms.RandomHorizontalFlip(p=0.5),
+                    # tv_transforms.RandomHorizontalFlip(p=0.5),
                     tv_transforms.ToTensor(),
                     tv_transforms.Normalize(
                         mean=IMAGENET_MEAN, std=IMAGENET_STD

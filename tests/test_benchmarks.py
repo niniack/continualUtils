@@ -16,6 +16,9 @@ from torch.utils.data.sampler import BatchSampler, SequentialSampler
 from tqdm import tqdm
 
 from continualUtils.benchmarks import SplitClickMe
+from continualUtils.benchmarks.datasets.ffcv_transforms import (
+    RandomHorizontalFlipSeeded,
+)
 
 
 def test_load_splitimagenet(device, tmpdir):
@@ -65,10 +68,11 @@ def test_load_splitclickme():
 
 def test_ffcv_clickme(device, tmpdir):
     """Test loading the SplitClickMe benchmark"""
+    device = torch.device("cpu")
     dataset_root = "/mnt/datasets/clickme"
     epochs = 5
     batch_size = 16
-    num_workers = 16
+    num_workers = 2
     # benchmark = SplitTinyImageNet(
     #     n_experiences=10, dataset_root="/mnt/datasets/tinyimagenet", seed=42
     # )
@@ -86,18 +90,18 @@ def test_ffcv_clickme(device, tmpdir):
     custom_decoder_pipeline = {
         "field_0": [
             ffcv.fields.rgb_image.SimpleRGBImageDecoder(),
-            # ffcv.transforms.ImageMixup(0.5, False),
+            RandomHorizontalFlipSeeded(0.5),
             # ffcv.fields.rgb_image.RandomResizedCropRGBImageDecoder((224, 224))
         ],
         "field_1": [
             ffcv.fields.basics.IntDecoder(),
-            # ffcv.transforms.LabelMixup(0.5, False),
             ffcv.transforms.ToTensor(),
         ],
         "field_2": [
             ffcv.fields.ndarray.NDArrayDecoder(),
-            ffcv.transforms.RandomHorizontalFlip(0.5),
+            RandomHorizontalFlipSeeded(0.5),
             ffcv.transforms.ToTensor(),
+            # ffcv.transforms.RandomHorizontalFlip(0.5),
             # ffcv.transforms.ToTorchImage(),
             # SmartModuleWrapper(tv_transforms.Resize((64, 64), antialias=True)),
             # SmartModuleWrapper(
@@ -126,6 +130,7 @@ def test_ffcv_clickme(device, tmpdir):
             compress_probability=0.25,
             max_resolution=256,
             jpeg_quality=90,
+            os_cache=True,
         ),
         decoder_def=custom_decoder_pipeline,
         decoder_includes_transformations=False,
