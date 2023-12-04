@@ -16,6 +16,7 @@ class PretrainedResNet50(HuggingFaceResNet):
         output_hidden: bool = False,
         multihead: bool = False,
         seed: int = 42,
+        **kwargs
     ):
         _model = ResNetForImageClassification.from_pretrained(
             "microsoft/resnet-50"
@@ -31,6 +32,7 @@ class PretrainedResNet50(HuggingFaceResNet):
             num_classes_total=1000,
             num_classes_per_head=num_classes_per_head,
             init_weights=False,
+            **kwargs
         )
         self._model = _model
         self._hidden_layers = []
