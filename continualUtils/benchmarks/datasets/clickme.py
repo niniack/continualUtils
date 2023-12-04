@@ -7,9 +7,7 @@ import json
 from pathlib import Path
 from typing import Callable, Literal, Optional
 
-import ffcv.transforms as ffcv_transforms
 import numpy as np
-import torch
 import torchvision.transforms as tv_transforms
 from avalanche.benchmarks.utils import _make_taskaware_classification_dataset
 from PIL import Image
