@@ -184,10 +184,10 @@ class HuggingFaceResNet(BaseModel):
             self._model.save_pretrained(
                 dir_name, state_dict=self._model.state_dict()
             )
-            print(f"Model saved in directory: {dir_name}")
+            print(f"\nModel saved in directory: {dir_name}")
         else:
             print(
-                "The provided model does not have a 'save_pretrained' method."
+                "\nThe provided model does not have a 'save_pretrained' method."
             )
 
     def _load_weights_impl(self, dir_name):
