@@ -11,6 +11,8 @@ packages = [{include = "continualUtils"}]
 python = ">=3.8,<3.11"
 avalanche-lib = { git = "https://github.com/ContinualAI/avalanche", rev = "12f37f8"}
 transformers = "^4.35"
+onnx2torch = "^1.5.13"
+captum = "^0.7.0"
 
 [tool.poetry.group.docker]
 optional = true

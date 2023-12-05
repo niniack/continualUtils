@@ -9,3 +9,4 @@ __pycache__/
 event.json
 *.dot
 *.png
+model_saves

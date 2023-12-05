@@ -3,7 +3,9 @@ from typing import Callable
 
 import torch
 import torch.nn.functional as F
+import torchvision.transforms.functional as TVF
 from torch.func import grad, vmap
+from torchvision.transforms.functional import gaussian_blur
 
 
 def check_pure_function(func):
@@ -67,6 +69,8 @@ def compute_saliency_map(
 
     # ReLU on the heatmap
     per_sample_map = F.relu(per_sample_map)
+
+    per_sample_map = TVF.gaussian_blur(per_sample_map, kernel_size=[3, 3])
 
     return per_sample_map
 
