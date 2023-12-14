@@ -66,15 +66,15 @@ class BaseModel(ABC, MultiTaskModule, DynamicModule):
             )
             self.multihead_classifier.to(device)
 
-        # Initialize weights with Kaiming init
-        if self.init_weights:
-            self._init_weights()
-
         # Update the module in-place to not use running stats
         # https://pytorch.org/functorch/stable/batch_norm.html
         # NOTE: Be careful with this, saliency maps require the patch
         if self.patch_batch_norm:
             self._patch_batch_norm()
+
+        # Initialize weights with Kaiming init
+        if self.init_weights:
+            self._init_weights()
 
         self._freeze_backbone: bool = False
 
@@ -82,6 +82,11 @@ class BaseModel(ABC, MultiTaskModule, DynamicModule):
         """
         Applies the Kaiming Normal initialization to all weights in the model.
         """
+
+        # Set the seed for reproducibility
+        torch.manual_seed(0)
+        torch.cuda.manual_seed(0)
+
         for m in self.modules():
             if isinstance(m, (nn.Conv2d, nn.Linear)):
                 nn.init.kaiming_normal_(

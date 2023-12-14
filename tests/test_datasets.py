@@ -101,8 +101,6 @@ def test_combined_dataset_consistency():
         item1 = dataset1[i]
         item2 = dataset2[i]
 
-        pdb.set_trace()
-
         # Check for the same number of elements (e.g., image, label, etc.)
         assert len(item1) == len(item2)
 

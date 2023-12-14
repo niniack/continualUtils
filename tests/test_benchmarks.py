@@ -131,6 +131,7 @@ def test_ffcv_clickme(device, tmpdir):
             max_resolution=256,
             jpeg_quality=90,
             os_cache=True,
+            seed=10,
         ),
         decoder_def=custom_decoder_pipeline,
         decoder_includes_transformations=False,
