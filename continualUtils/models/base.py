@@ -84,8 +84,8 @@ class BaseModel(ABC, MultiTaskModule, DynamicModule):
         """
 
         # Set the seed for reproducibility
-        torch.manual_seed(0)
-        torch.cuda.manual_seed(0)
+        torch.manual_seed(self.seed)
+        torch.cuda.manual_seed(self.seed)
 
         for m in self.modules():
             if isinstance(m, (nn.Conv2d, nn.Linear)):
