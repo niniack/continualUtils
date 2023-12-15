@@ -1,5 +1,5 @@
 import inspect
-from typing import Callable
+from typing import Callable, List, Optional
 
 import torch
 import torch.nn.functional as F
@@ -29,6 +29,8 @@ def compute_saliency_map(
     tasks: torch.Tensor,
     targets: torch.Tensor,
     grad_enabled: bool = True,
+    single_channel: bool = True,
+    blur_kernel: Optional[List[int]] = [3, 3],
 ) -> torch.Tensor:
     """
     Compute saliency map
@@ -36,6 +38,9 @@ def compute_saliency_map(
     :param pure_function: Callable function.
     :param inputs: Model inputs.
     :param targets: Ground truth labels.
+    :param grad_enabled: Keep the computational graph, defaults to True.
+    :param single_channel: Reduce the map down to a single channel, defaults to True.
+    :param blur_map: Applying a Gaussian blur, defaults to [3,3]. Set to None for no blurring.
     :return: Computed saliency map.
     """
 
@@ -44,39 +49,51 @@ def compute_saliency_map(
         raise ValueError(
             f"{pure_function.__name__} must have the arguments: inputs, model, targets"
         )
+    # Check if blur kernel is valid type
+    if not isinstance(blur_kernel, List) or blur_kernel is not None:
+        raise ValueError(
+            "The blur_kernel argument must be a list of 2 odd integers."
+        )
+
+    # Check if blur kernel is valid list
+    if isinstance(blur_kernel, List) and len(blur_kernel) != 2:
+        raise ValueError(
+            "The blur_kernel argument must be a list of 2 odd integers."
+        )
 
     # Set up gradient operator with respect to first argument
     # The 0th argument MUST be inputs
     compute_single_saliency = grad(pure_function, argnums=0, has_aux=False)
 
     # Set up vmap operator for entire batch
-    # All arguments must be batched (see in_dims)
+    # All relevant arguments must be batched (see in_dims argument)
     compute_batch_saliency = vmap(
-        compute_single_saliency, in_dims=(0, None, 0, None, None)
+        compute_single_saliency, in_dims=(0, None, 0, None)
     )
 
-    # each minibatch should have the same task, so this shouldn't be an issue
+    # Each minibatch should have the same task, potential issue
     task = int(tasks[0])
 
     # Execute the transformed function
     # vmap will automatically unbatch the arguments
-    per_sample_grad = compute_batch_saliency(
-        inputs, task, targets, model, grad_enabled
-    )
+    per_sample_grad = compute_batch_saliency(inputs, task, targets, model)
+
+    # Remove the computational graph, will not allow backpropagation
+    if not grad_enabled:
+        per_sample_grad = per_sample_grad.detach()
 
     # Reduce the channels to get single channel heatmap
-    per_sample_map = torch.mean(per_sample_grad, dim=1, keepdim=True)
+    if single_channel:
+        per_sample_grad = torch.mean(per_sample_grad, dim=1, keepdim=True)
 
-    # ReLU on the heatmap
-    per_sample_map = F.relu(per_sample_map)
+    # ReLU on the heatmap to zero out negative values
+    per_sample_map = F.relu(per_sample_grad)
 
-    per_sample_map = TVF.gaussian_blur(per_sample_map, kernel_size=[3, 3])
+    # Blur the heatmap, tends to make it brighter
+    if isinstance(blur_kernel, List):
+        per_sample_map = gaussian_blur(per_sample_map, kernel_size=blur_kernel)
 
     return per_sample_map
-
-
-class OneHotException(Exception):
-    pass
 
 
 def compute_score(
@@ -84,62 +101,30 @@ def compute_score(
     task: int,
     y: torch.Tensor,
     model: torch.nn.Module,
-    grad_enabled: bool = True,
 ) -> torch.Tensor:
     """
     Since vmap will unbatch and vectorize the computation, we
     assume that all the inputs do not have a batch dimension.
     """
 
-    with torch.set_grad_enabled(grad_enabled):
-        # Batch
-        x = x.unsqueeze(0)
-        y = y.unsqueeze(0)
+    # Batch
+    x = x.unsqueeze(0)
+    y = y.unsqueeze(0)
 
-        # Forward pass
-        # task is an int
-        output = model(x, task)
+    # Forward pass with the model
+    # task is an int
+    output = model(x, task)
 
-        if output.shape != y.shape:
-            raise OneHotException(
-                "The model outputs must be the shape as the target."
-            )
-        score = torch.sum(output * y)
+    if output.shape != y.shape:
+        raise OneHotException(
+            "The model outputs must be the shape as the target."
+        )
+    score = torch.sum(output * y)
     return score
 
 
-## Archive ##
+class OneHotException(Exception):
+    """Raised when there was a one hot target expected"""
 
-# def compute_saliency_map(
-#     outputs: torch.Tensor,
-#     inputs: torch.Tensor,
-#     targets: torch.Tensor,
-#     num_classes: int = 1000,
-#     create_graph: bool = True,
-# ) -> torch.Tensor:
-#     """
-#     Compute saliency map for given outputs, inputs, and targets.
-
-#     :param outputs: Model outputs.
-#     :param inputs: Model inputs.
-#     :param targets: Ground truth labels.
-#     :param create_graph: Whether to create a computation graph.
-#     :return: Computed saliency map.
-#     """
-
-#     # Convert targets to one-hot encoding
-#     targets_one_hot = F.one_hot(targets, num_classes)
-
-#     # Reduce outputs by summing over the product of outputs and one-hot targets
-#     outputs_reduced = torch.sum(outputs * targets_one_hot)
-
-#     # Compute gradients of reduced outputs with respect to inputs
-#     grads = torch.autograd.grad(
-#         outputs=outputs_reduced, inputs=inputs, create_graph=create_graph
-#     )[0]
-
-#     # Compute weights and saliency maps
-#     weights = grads.mean(dim=(2, 3), keepdim=True)
-#     saliency_maps = F.relu((grads * weights).sum(dim=1, keepdim=True))
-
-#     return saliency_maps
+    def __init__(self, message):
+        super().__init__(message)
