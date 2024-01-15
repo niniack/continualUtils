@@ -95,7 +95,7 @@ class BaseModel(ABC, MultiTaskModule, DynamicModule):
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
 
-    def toggle_hidden(self, output_hidden):
+    def toggle_hidden(self, output_hidden: bool):
         """Set whether model outputs hidden layers
 
         :param output_hidden: Flag for outputting hidden layers

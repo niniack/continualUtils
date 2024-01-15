@@ -1,22 +1,43 @@
+from logging import Logger
+from typing import Any
+
 import torch
 import torch.nn.functional as F
+from avalanche.benchmarks.scenarios.deprecated.dataset_scenario import (
+    DatasetScenario,
+)
+from avalanche.benchmarks.scenarios.deprecated.new_classes.nc_scenario import (
+    NCScenario,
+)
 from torch import Tensor
 from torch.utils.data import DataLoader
+from torchvision import transforms
+from torchvision.models import alexnet
 
 from continualUtils.benchmarks.datasets.clickme import HEATMAP_INDEX
+from continualUtils.explain.losses.harmonizer_loss import NeuralHarmonizerLoss
+from continualUtils.explain.losses.lwm_loss import LwMLoss
 from continualUtils.explain.tools import (
+    compute_grad_cam,
     compute_pyramidal_mse,
     compute_saliency_map,
     compute_score,
     standardize_cut,
 )
-from continualUtils.explain.tools.harmonizer_loss import NeuralHarmonizerLoss
-from continualUtils.explain.tools.lwm_loss import LwMLoss
 from continualUtils.explain.tools.pyramidal import _pyramidal_representation
-from continualUtils.models import CustomResNet18, CustomResNet50
+from continualUtils.models import (
+    CustomResNet18,
+    CustomResNet50,
+    PretrainedResNet18,
+    PretrainedResNet50,
+)
 
 
-def test_lwm_loss(split_clickme_benchmark, device, logger):
+def test_lwm_loss(
+    split_clickme_benchmark: NCScenario | DatasetScenario[Any, Any, Any],
+    device: torch.device,
+    logger: Logger,
+):
     # Define model
     old_model = CustomResNet18(
         device=device,
@@ -62,7 +83,8 @@ def test_lwm_loss(split_clickme_benchmark, device, logger):
 
 
 def test_harmonizer_loss_pretrained(
-    pretrained_resnet18, split_clickme_benchmark
+    pretrained_resnet18: PretrainedResNet18,
+    split_clickme_benchmark: NCScenario | DatasetScenario[Any, Any, Any],
 ):
     # Set up benchmark
     train_stream = split_clickme_benchmark.train_stream
@@ -117,7 +139,9 @@ def test_harmonizer_loss_pretrained(
     assert torch.allclose(manual_loss, func_loss)
 
 
-def test_cut_ground_maps(split_clickme_benchmark):
+def test_cut_ground_maps(
+    split_clickme_benchmark: NCScenario | DatasetScenario[Any, Any, Any]
+):
     """Testing the output of standardizing SplitClickMe ground truth maps"""
 
     train_stream = split_clickme_benchmark.train_stream
@@ -133,26 +157,115 @@ def test_cut_ground_maps(split_clickme_benchmark):
     assert torch.min(preprocessed_heatmaps) >= 0.0
 
 
-# def test_compute_saliency_map(pretrained_resnet18, img_tensor_list):
+# def test_grad_cam(img_tensor_list: list[Any]):
 #     """Testing saliency map"""
-#     model = pretrained_resnet18
-#     inputs = img_tensor_list[0].requires_grad_(True)
-#     outputs = model.forward(img_tensor_list[0])
-#     targets = torch.Tensor([281]).long()
+
+#     model = PretrainedResNet50(device=torch.device("cpu"))
+#     transform = transforms.Compose([transforms.Resize((224, 224))])
+
+#     # Apply the transform to each image
+#     img1 = transform(img_tensor_list[0])
+#     img2 = transform(img_tensor_list[1])
+
+#     # Stack the images to create a batch
+#     inputs = torch.cat([img1, img2]).requires_grad_(True)
+#     targets = torch.Tensor([281, 281]).long()
+#     tasks = torch.Tensor([0, 0]).long()
+
+#     # Grab last layer
+#     target_layer_name = "_model.resnet.encoder.stages.3"
+
+#     # One hot the targets
+#     targets = F.one_hot(targets, num_classes=1000)
 
 #     # Compute the saliency map
-#     saliency_map = compute_saliency_map(outputs, inputs, targets)
-#     saliency_map_np = (
-#         saliency_map.detach().cpu().squeeze(0).permute(1, 2, 0).numpy()
+#     grad_cam_map = compute_grad_cam(
+#         model=model,
+#         inputs=inputs,
+#         targets=targets,
+#         target_layer_name=target_layer_name,
+#         tasks=tasks,
+#         grad_enabled=False,
 #     )
 
-#     # Normalize the saliency map
-#     saliency_map_np = (saliency_map_np - saliency_map_np.min()) / (
-#         saliency_map_np.max() - saliency_map_np.min()
-#     )
+#     # assert grad_cam_map.shape == (inputs.shape[0], 1, *(inputs.shape[-2:]))
 
-#     # Assert the shape
-#     assert inputs.shape[-2:] == saliency_map_np.shape[:2]
+#     # print(torch.mean(grad_cam_map))
+#     # print(torch.std(grad_cam_map))
+
+#     # # Visualize the first Grad-CAM heatmap
+#     # import matplotlib.pyplot as plt
+
+#     # plt.imshow(
+#     #     grad_cam_map[0].squeeze().detach().numpy(), cmap="jet", alpha=0.5
+#     # )
+#     # plt.savefig("./grad_cam.png")
+
+
+# def test_perturbed():
+#     model = alexnet(pretrained=False)
+#     print(model)
+#     # Store for activations
+#     activations = {}
+
+#     # Function to be called by the hook
+#     def hook_fn(module, input, output):
+#         activations["linear"] = output  # Store the output
+
+#     # Register the hook
+#     # hook = model.linear.register_forward_hook(hook_fn)
+
+#     # Batched inputs
+#     xs = torch.rand(1, 3, 256, 256)
+#     delta_ys = torch.rand(1, 3, 224, 224)
+
+#     def f_perturbed(params, x, delta_y):
+#         # y = torch.func.functional_call(model, params, x)
+#         y = model(x)
+#         # Run the forward pass to trigger the hook
+#         # Modify the activation directly
+#         print(params)
+#         # modified_activation = activations["linear"].squeeze() + delta_y
+#         return y
+
+#     # Vectorize the gradient computation over the batch
+#     # Assuming torch.vmap works similar to JAX's vmap
+#     grad = torch.func.grad(f_perturbed, argnums=(1), has_aux=False)
+#     params_dict = {name: param for name, param in model.named_parameters()}
+
+#     batched_grad = torch.vmap(grad, in_dims=(None, 0, 0), randomness="same")(
+#         params_dict, xs, delta_ys
+#     )
+#     print(batched_grad)
+#     # assert torch.sum(batched_grad).item() != 0.0
+
+#     # # Remove the hook when done to prevent memory leak
+#     # hook.remove()
+
+
+def test_saliency_map(img_tensor_list: list[Any]):
+    """Testing saliency map"""
+
+    model = PretrainedResNet50(device=torch.device("cpu"))
+    inputs = img_tensor_list[0].requires_grad_(True)
+    targets = torch.Tensor([281]).long()
+    tasks = torch.Tensor([0]).long()
+
+    # One hot the targets
+    targets = F.one_hot(targets, num_classes=1000)
+
+    # Compute the saliency map
+    saliency_map = compute_saliency_map(
+        pure_function=compute_score,
+        model=model,
+        inputs=inputs,
+        targets=targets,
+        tasks=tasks,
+        grad_enabled=False,
+        single_channel=False,
+    )
+
+    assert saliency_map.shape == inputs.shape
 
 
 def test_pyramidal_mse():
