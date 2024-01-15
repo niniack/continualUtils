@@ -1,6 +1,6 @@
 from avalanche.training.plugins.strategy_plugin import SupervisedPlugin
 
-from continualUtils.explain.tools.lwm_loss import LwMLoss
+from continualUtils.explain.losses.lwm_loss import LwMLoss
 
 
 class LwMPlugin(SupervisedPlugin):

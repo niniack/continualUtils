@@ -7,7 +7,7 @@ from continualUtils.benchmarks.datasets.clickme import (
     HEATMAP_INDEX,
     TOKEN_INDEX,
 )
-from continualUtils.explain.tools.harmonizer_loss import NeuralHarmonizerLoss
+from continualUtils.explain.losses.harmonizer_loss import NeuralHarmonizerLoss
 
 # This is the logic/hierarchy for the strategy
 # train

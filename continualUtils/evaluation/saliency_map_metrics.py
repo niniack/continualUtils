@@ -18,8 +18,8 @@ from torchvision.utils import make_grid
 from typing_extensions import Literal
 
 from continualUtils.benchmarks.datasets.clickme import HEATMAP_INDEX
+from continualUtils.explain.losses.harmonizer_loss import compute_score
 from continualUtils.explain.tools import compute_saliency_map
-from continualUtils.explain.tools.harmonizer_loss import compute_score
 
 if TYPE_CHECKING:
     from avalanche.training.templates import SupervisedTemplate
