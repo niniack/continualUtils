@@ -72,11 +72,8 @@ filterwarnings = [
 log_cli = true
 
 [tool.pylint.main]
-# List of members which are set dynamically and missed by pylint inference
-# system, and so shouldn't trigger E1101 when accessed. Python regular
-# expressions are accepted.
 generated-members = "torch.*, avalanche.*"
-disable = "c0114, r0913, w0212, e1101, e1102" # disable missing-module-docstring, too many arguments
+disable = "c0114, r0913, w0212, e1101, e1102"
 
 [[tool.poetry.source]]
 name = "torch"
